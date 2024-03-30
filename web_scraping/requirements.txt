@@ -1,2 +1,2 @@
-notebook
 requests_html
+pyppeteer
