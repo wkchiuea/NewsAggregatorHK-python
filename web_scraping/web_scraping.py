@@ -3,61 +3,6 @@ from pyppeteer import launch
 import asyncio
 
 
-"""
-Date, <-----------
-Headline, <-----------
-URL, <-----------
-Opening Text, <-----------
-Hit Sentence,
-Source, <-----------
-Influencer,
-Country,
-Subregion,
-Language, <-----------
-Reach,
-Desktop Reach,
-Mobile Reach,
-Twitter Social Echo,
-Facebook Social Echo,
-Reddit Social Echo,
-National Viewership,
-Engagement,
-AVE,
-Sentiment,
-Key Phrases, <-----------
-Input Name,
-Keywords,
-Twitter Authority,
-Tweet Id,
-Twitter Id,
-Twitter Client,
-Twitter Screen Name,
-User Profile Url,
-Twitter Bio,
-Twitter Followers,
-Twitter Following,
-Alternate Date Format,
-Time,
-State,
-City,
-Social Echo Total,
-Editorial Echo,
-Views,
-Estimated Views,
-Likes,
-Replies,
-Retweets,
-Comments,
-Shares,
-Reactions,
-Threads,
-Is Verified,
-Parent URL,
-Document Tags,
-Document ID
-"""
-
-
 def fetch_navbar(url, section_str):
     print("Fetching navbar ...")
 
