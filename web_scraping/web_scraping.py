@@ -1,100 +1,149 @@
-from requests_html import HTMLSession, HTML
+import requests
+from bs4 import BeautifulSoup
 from pyppeteer import launch
 import asyncio
+import nest_asyncio
+import pandas as pd
 
 
-def fetch_navbar(url, section_str):
-    print("Fetching navbar ...")
+class WebScraper:
 
-    session = HTMLSession()
-    r = session.get(url)
-    print("Status code :", r.status_code)
-    print(r.html)
+    def __init__(self, config):
+        self.base_url = config.get("base_url", "")
+        self.language = config.get("language", "")
+        self.category_str = config.get("category_str", "")
+        self.target_categories = config.get("target_categories", "")
 
-    navbar = r.html.find("nav", first=True)
-    a_tags = navbar.find("a")
+        self.num_scroll = config.get("num_scroll", 3)
+        self.news_card_identifier = config.get("news_card_identifier", "")
 
-    section_urls = [a.base_url + a.attrs.get("href") for a in a_tags if section_str in a.attrs.get("href")]
-    print("Section URLs :", section_urls)
+        self.content_identifier_dict = config.get("content_identifier_dict", {})
 
-    session.close()
+        self.is_debug = config.get("is_debug", False)
 
-    return section_urls
+    def fetch_navbar(self):
+        base_url = self.base_url
+        category_str = self.category_str
+        target_categories = self.target_categories
 
+        with requests.get(base_url) as r:
+            soup = BeautifulSoup(r.content, "lxml")
+            if self.is_debug:
+                print("Status code :", r.status_code)
 
-async def scroll_and_scrape(url, num_scroll=4):
-    browser = await launch()
-    page = await browser.newPage()
-    await page.goto(url)
+        navbar = soup.find("nav")
+        a_tags = navbar.find_all("a")
 
-    # Scroll down the page
-    for _ in range(num_scroll):
-        await page.evaluate('window.scrollTo(0, document.body.scrollHeight);')
-        await asyncio.sleep(2)  # Wait for content to load
+        category_urls = [a["href"] for a in a_tags if category_str in a["href"]]
+        category_urls = [url for url in category_urls if any(category in url for category in target_categories)]
+        category_urls = self.format_urls_to_absolute_urls(category_urls)
 
-    # Scrape the content
-    content = await page.content()
+        return category_urls
 
-    await browser.close()
+    def fetch_links_in_category(self, url):
+        news_card_identifier = self.news_card_identifier
 
-    return content
+        with requests.get(url) as r:
+            soup = BeautifulSoup(r.content, "lxml")
+            if self.is_debug:
+                print("status code :", r.status_code)
 
+        content = asyncio.get_event_loop().run_until_complete(self.scroll_and_scrape(url, num_scroll=self.num_scroll))
+        soup = BeautifulSoup(content, "lxml")
 
-def fetch_links_in_section(base_url, url):
-    print("Fetching all news links ...")
+        cards = soup.select(news_card_identifier)
+        news_urls = [card.find("a").attrs["href"] for card in cards if card.find("a")]
+        news_urls = self.format_urls_to_absolute_urls(news_urls)
 
-    session = HTMLSession()
-    r = session.get(url)
-    print("status code :", r.status_code)
-    print(r.html)
+        return news_urls
 
-    content = asyncio.get_event_loop().run_until_complete(scroll_and_scrape(url, num_scroll=1))
-    body = HTML(html=content)
+    def fetch_content_in_news(self, url):
+        content_identifier_dict = self.content_identifier_dict
+        headline_identifier = content_identifier_dict["headline"]
+        datetime_identifier = content_identifier_dict["datetime"]
+        content_identifier = content_identifier_dict["content"]
 
-    cards = body.find(".content-card")
-    print("Cards length :", len(cards))
-    news_urls = [base_url + card.find("a", first=True).attrs["href"] for card in cards if card.find("a")]
+        with requests.get(url) as r:
+            soup = BeautifulSoup(r.content, "lxml")
+            if self.is_debug:
+                print("Status code :", r.status_code, "| url :", url)
 
-    for link in news_urls:
-        print(link)
+        data_dict = {
+            "headline": soup.select_one(headline_identifier).text.strip(),
+            "language": self.language,
+            "datetime": soup.select_one(datetime_identifier)["datetime"].strip(),
+            "url": url,
+            "content": soup.select_one(content_identifier).text.strip().replace("\n", " ")
+        }
 
-    session.close()
+        return data_dict
 
-    return news_urls
+    async def scroll_and_scrape(self, url, num_scroll=3):
+        browser = await launch()
+        page = await browser.newPage()
+        await page.goto(url)
 
+        # Scroll down the page
+        for _ in range(num_scroll):
+            await page.evaluate('window.scrollTo(0, document.body.scrollHeight);')
+            await asyncio.sleep(2)  # Wait for content to load
 
-def fetch_content_in_news(url="https://www.hk01.com/%E7%A4%BE%E6%9C%83%E6%96%B0%E8%81%9E/1005551/%E8%91%B5%E8%8A%B3%E7%89%9B%E8%A7%92%E4%B8%80%E5%BC%B5%E5%96%AE4-7%E8%90%AC-%E8%80%81%E9%97%86%E9%BB%83%E5%82%91%E9%BE%8D-%E6%B6%88%E8%B2%BB%E5%AF%92%E5%86%AC%E4%B8%AD-%E7%B0%A1%E7%9B%B4%E4%BF%82%E5%86%8D%E7%94%9F%E7%88%B6%E6%AF%8D"):
-    print("Fetching each news content ...")
+        # Scrape the content
+        content = await page.content()
 
-    session = HTMLSession()
-    r = session.get(url)
-    print("status code :", r.status_code)
-    print(r.html)
+        await browser.close()
 
-    data_dict = {
-        "date": r.html.find("div[data-testid='article-publish-info']", first=True).text,
-        "headline": r.html.find("#articleTitle").text,
-        "url": url,
-        "opening_text": r.html.find("article#article-content-section", first=True).find("p", first=True).text
-    }
+        return content
 
-    session.close()
+    def format_urls_to_absolute_urls(self, urls):
+        base_url = self.base_url
+        return [url if url.startswith("http") else base_url + url for url in urls]
 
-    return data_dict
+    def start_scraping(self):
+        print("Fetching navbar ...", self.base_url)
+        category_urls = self.fetch_navbar()
+        print("Category URLs :", category_urls)
+
+        data_dict_list = []
+        for category_url in category_urls:
+            print("Fetching all news links ...", category_url)
+            news_urls = self.fetch_links_in_category(category_url)
+            print("Total news links :", len(news_urls))
+
+            print("Fetching each news content ...")
+            for news_url in news_urls:
+                try:
+                    data_dict_list.append(self.fetch_content_in_news(news_url))
+                except:
+                    print("Error fetching :", news_url)
+
+        return data_dict_list
 
 
 def main():
-    base_url = "https://www.hk01.com"
-    section_str = "/channel/"
-    section_urls = fetch_navbar(base_url, section_str)
+    content_identifier_dict = {
+        "headline": "h1.entry-title",
+        "datetime": "time.entry-date",
+        "content": "div.entry-content"
+    }
 
-    for url in section_urls:
-        news_urls = fetch_links_in_section(base_url, url)
+    config = {
+        "base_url": "https://portal.sina.com.hk/",
+        "language": "zh",
+        "category_str": "/category/",
+        "target_categories": ["news-hongkong", "news-china"],#, "news-intl", "technology", "lifestyle"],
+        "news_card_identifier": "article",
+        "content_identifier_dict": content_identifier_dict,
+        "is_debug": True
+    }
 
-        for news_url in news_urls:
-            data_dict = fetch_content_in_news(news_url)
+    webscraper = WebScraper(config)
+    data_dict_list = webscraper.start_scraping()
+    df = pd.DataFrame(data_dict_list)
+    df.to_csv("data/news_data.csv", sep="\t", index=False, encoding="utf-8")
 
 
 if __name__ == '__main__':
-    # main()
-    fetch_content_in_news()
+    main()
+
+
