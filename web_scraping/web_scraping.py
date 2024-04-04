@@ -9,7 +9,7 @@ import pandas as pd
 class WebScraper:
 
     headers = {
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
     }
 
     def __init__(self, config):
@@ -59,7 +59,7 @@ class WebScraper:
         soup = BeautifulSoup(content, "lxml")
 
         cards = soup.select(news_card_identifier)
-        news_urls = [card.find("a").attrs["href"] for card in cards if card.find("a")]
+        news_urls = [card.find("a").attrs["href"] if card.find("a") else card.attrs["href"] for card in cards]
         news_urls = self.format_urls_to_absolute_urls(news_urls)
 
         return news_urls
@@ -104,7 +104,27 @@ class WebScraper:
 
     def format_urls_to_absolute_urls(self, urls):
         base_url = self.base_url
-        return [url if url.startswith("http") else base_url + url for url in urls]
+
+        abs_urls = []
+        for url in urls:
+            if url.startswith("http"):
+                abs_urls.append(url)
+            elif not url.startswith("/"):
+                abs_urls.append(base_url + url)
+            elif url.startswith("/home/"):
+                abs_urls.append(base_url + url[len("/home/"):])
+            elif url.startswith("/instantnews/"):
+                abs_urls.append(base_url + url[len("/instantnews/"):])
+            elif url.startswith("/tc/"):
+                abs_urls.append(base_url + url[len("/tc/"):])
+            elif url.startswith("/rthk/ch/latest-news/"):
+                abs_urls.append(base_url + url[len("/rthk/ch/latest-news/"):])
+            elif url.startswith("/rthk/en/latest-news/"):
+                abs_urls.append(base_url + url[len("/rthk/en/latest-news/"):])
+            else:
+                abs_urls.append(base_url + url[1:])
+
+        return abs_urls
 
     def start_scraping(self):
         print("Fetching navbar ...", self.base_url)
@@ -158,16 +178,16 @@ class WebScraper:
 
 def main():
     config = {
-        "name": "sina",
-        "base_url": "https://portal.sina.com.hk/",
+        "name": "hk01",
+        "base_url": "https://www.hk01.com/",
         "language": "zh",
         "navbar": "nav",
-        "category_str": "/category/",
-        "target_categories": ['news-hongkong', 'news-china', 'news-intl', 'technology'],
-        "news_card_identifier": "article",
-        "headline_identifier": "h1.entry-title",
-        "datetime_identifier": "time.entry-date",
-        "content_identifier": "div.entry-content",
+        "category_str": "/channel/",
+        "target_categories": ['社會新聞', '即時中國', '即時國際', '數碼生活'],
+        "news_card_identifier": "div.content-card__main",
+        "headline_identifier": "#articleTitle",
+        "datetime_identifier": "time",
+        "content_identifier": "div.article-grid__content-section",
         "is_debug": True
     }
 
@@ -180,5 +200,6 @@ def main():
 
 if __name__ == '__main__':
     main()
+
 
 

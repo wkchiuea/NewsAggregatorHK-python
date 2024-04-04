@@ -14,7 +14,7 @@ config2 = {
 
 config3 = {
     "name": "hket",
-    "base_url": "https://www.hket.com/",
+    "base_url": "https://inews.hket.com/",
     "language": "zh",
     "navbar": "div.list-item.active",
     "category_str": "/sran",
@@ -26,13 +26,13 @@ config3 = {
     "is_debug": True
 }
 
-config5 = {
+config4 = {
     "name": "hk01",
     "base_url": "https://www.hk01.com/",
     "language": "zh",
     "navbar": "nav",
     "category_str": "/channel/",
-    "target_categories": ['社會新聞','即時中國','即時國際','數碼生活'],
+    "target_categories": ['%E7%A4%BE%E6%9C%83%E6%96%B0%E8%81%9E','%E5%8D%B3%E6%99%82%E4%B8%AD%E5%9C%8B','%E5%8D%B3%E6%99%82%E5%9C%8B%E9%9A%9B'],
     "news_card_identifier": "div.content-card__main",
     "headline_identifier": "#articleTitle",
     "datetime_identifier": "time",
@@ -40,7 +40,7 @@ config5 = {
     "is_debug": True
 }
 
-config6 = {
+config5 = {
     "name": "std",
     "base_url": "https://std.stheadline.com/",
     "language": "zh",
@@ -49,12 +49,12 @@ config6 = {
     "target_categories": ['hongkong','china','international'],
     "news_card_identifier": "div.media.heading-4",
     "headline_identifier": "h1",
-    "datetime_identifier": "span.date",
+    "datetime_identifier": "article.content span.date",
     "content_identifier": "section",
     "is_debug": True
 }
 
-config7 = {
+config6 = {
     "name": "stheadline",
     "base_url": "https://www.stheadline.com/",
     "language": "zh",
@@ -62,13 +62,13 @@ config7 = {
     "category_str": "/",
     "target_categories": ['news','china','world'],
     "news_card_identifier": "div.news-block",
-    "headline_identifier": "h1.article-title",
-    "datetime_identifier": "span.time",
+    "headline_identifier": "div.article-title h1",
+    "datetime_identifier": "div.time span",
     "content_identifier": "article",
     "is_debug": True
 }
 
-config8 = {
+config7 = {
     "name": "mingpao",
     "base_url": "https://news.mingpao.com/",
     "language": "zh",
@@ -82,7 +82,7 @@ config8 = {
     "is_debug": True
 }
 
-config9 = {
+config8 = {
     "name": "am730",
     "base_url": "https://www.am730.com.hk/",
     "language": "zh",
@@ -96,7 +96,7 @@ config9 = {
     "is_debug": True
 }
 
-config10 = {
+config9 = {
     "name": "oncc",
     "base_url": "https://hk.on.cc/",
     "language": "zh",
@@ -105,12 +105,12 @@ config10 = {
     "target_categories": ['news','cnnews','intnews'],
     "news_card_identifier": "div.focus",
     "headline_identifier": "div.topHeadline",
-    "datetime_identifier": "span.time",
+    "datetime_identifier": "span.datetime",
     "content_identifier": "div.breakingNewsContent",
     "is_debug": True
 }
 
-config11 = {
+config10 = {
     "name": "now",
     "base_url": "https://news.now.com/home",
     "language": "zh",
@@ -124,9 +124,9 @@ config11 = {
     "is_debug": True
 }
 
-config12 = {
+config11 = {
     "name": "hkej",
-    "base_url": "http://www.hkej.com/instantnews",
+    "base_url": "http://www.hkej.com/instantnews/",
     "language": "zh",
     "navbar": "div#hkej_navSubMenu_2014",
     "category_str": "/instantnews",
@@ -138,7 +138,7 @@ config12 = {
     "is_debug": True
 }
 
-config13 = {
+config12 = {
     "name": "tvb",
     "base_url": "https://news.tvb.com/tc",
     "language": "zh",
@@ -152,11 +152,25 @@ config13 = {
     "is_debug": True
 }
 
+config13 = {
+    "name": "rthk",
+    "base_url": "https://news.rthk.hk/rthk/ch/latest-news/",
+    "language": "zh",
+    "navbar": "ul.nav.express-news-submenu",
+    "category_str": "/",
+    "target_categories": ['local','greater-china','world-news'],
+    "news_card_identifier": "div.ns2-page",
+    "headline_identifier": "h2.itemTitle",
+    "datetime_identifier": "div.createddate",
+    "content_identifier": "div.itemBody",
+    "is_debug": True
+}
+
 config14 = {
     "name": "rthk",
-    "base_url": "https://news.rthk.hk/rthk/ch/latest-news.htm",
-    "language": "zh",
-    "navbar": "ul.nav",
+    "base_url": "https://news.rthk.hk/rthk/en/latest-news/",
+    "language": "en",
+    "navbar": "ul.nav.express-news-submenu",
     "category_str": "/",
     "target_categories": ['local','greater-china','world-news'],
     "news_card_identifier": "div.ns2-page",
@@ -167,20 +181,6 @@ config14 = {
 }
 
 config15 = {
-    "name": "rthk",
-    "base_url": "https://news.rthk.hk/rthk/en/latest-news.htm",
-    "language": "en",
-    "navbar": "ul.nav",
-    "category_str": "/",
-    "target_categories": ['local','greater-china','world-news'],
-    "news_card_identifier": "div.ns2-page",
-    "headline_identifier": "h2.itemTitle",
-    "datetime_identifier": "div.createddate",
-    "content_identifier": "div.itemBody",
-    "is_debug": True
-}
-
-config16 = {
     "name": "scmp",
     "base_url": "https://www.scmp.com/",
     "language": "en",
@@ -194,7 +194,7 @@ config16 = {
     "is_debug": True
 }
 
-config17 = {
+config16 = {
     "name": "wenweipo",
     "base_url": "https://www.wenweipo.com/",
     "language": "zh",
@@ -208,7 +208,7 @@ config17 = {
     "is_debug": True
 }
 
-config18 = {
+config17 = {
     "name": "takungpao",
     "base_url": "https://www.takungpao.com.hk/",
     "language": "zh",
