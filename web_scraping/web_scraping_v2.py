@@ -9,8 +9,26 @@ import pandas as pd
 from config_file import configs
 
 
+# Create a logger
 logger = logging.getLogger(__name__)
-logging.basicConfig(filename='webscraping.log', level=logging.INFO)
+logger.setLevel(logging.DEBUG)  # Set the minimum log level
+
+# Create a file handler for output file
+file_handler = logging.FileHandler('app.log')
+file_handler.setLevel(logging.DEBUG)
+# Create a console handler for output to console
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.DEBUG)
+
+# Create a formatter and set it for both handlers
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s',
+                              datefmt='%Y-%m-%d %H:%M:%S')
+file_handler.setFormatter(formatter)
+console_handler.setFormatter(formatter)
+
+# Add the handlers to the logger
+logger.addHandler(file_handler)
+logger.addHandler(console_handler)
 
 
 class WebScraper:
@@ -121,7 +139,11 @@ class WebScraper:
 
             logger.info("Fetching each news content ...")
             for news_url in news_urls:
-                data_dict_list.append(self.fetch_content_in_news(news_url))
+                try:
+                    logger.info("Fetching " + news_url)
+                    data_dict_list.append(self.fetch_content_in_news(news_url))
+                except Exception as e:
+                    logger.error(e)
 
         return data_dict_list
 
@@ -137,15 +159,13 @@ def main():
         logger.info(f"************   {config['name']}   ************")
 
         webscraper = WebScraper(config)
-        try:
-            data_dict_list = webscraper.start_scraping()
-        except:
-            logger.exception(f"*** Error for site {config['name']}")
-            data_dict_list = []
+        data_dict_list = webscraper.start_scraping()
         if len(data_dict_list) == 0:
             logger.info(f"************   {config['name']} fail to fetch data")
             continue
         news_dict_list.append(data_dict_list)
+
+    export_data(news_dict_list)
 
 
 if __name__ == '__main__':
