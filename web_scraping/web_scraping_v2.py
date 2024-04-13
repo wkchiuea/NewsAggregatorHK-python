@@ -64,7 +64,8 @@ class WebScraper:
         soup = BeautifulSoup(content, "lxml")
 
         cards = soup.select(news_card_identifier)
-        news_urls = [card.find("a").attrs["href"] if card.find("a") else card.attrs["href"] for card in cards]
+        news_urls = [card.find("a").attrs["href"] if card.find("a") else card.attrs.get("href", "") for card in cards]
+        news_urls = [url for url in news_urls if len(url) > 0]
         news_urls = self.format_urls_to_absolute_urls(news_urls)
 
         return news_urls
@@ -94,7 +95,7 @@ class WebScraper:
         browser = await launch()
         page = await browser.newPage()
         await page.setUserAgent(self.headers['User-Agent'])
-        await page.goto(url)
+        await page.goto(url, {"timeout": 60000})
 
         # Scroll down the page
         for _ in range(num_scroll):
@@ -135,6 +136,7 @@ class WebScraper:
         for category_url in category_urls:
             logger.info("Fetching all news links ... " + category_url)
             news_urls = self.fetch_links_in_category(category_url)
+            news_urls = list(set(news_urls))
             logger.info("Total news links : " + f"{len(news_urls)}")
 
             logger.info("Fetching each news content ...")
@@ -150,7 +152,9 @@ class WebScraper:
 
 def export_data(news_dict_list):
     df = pd.DataFrame(news_dict_list)
-    df.to_csv(f"data/news_data.csv", sep="\t", index=False, encoding="utf-8")
+    df.to_csv(f"data/news_data_utf8.csv", sep="\t", index=False, encoding="utf-8")
+    df.to_csv(f"data/news_data.csv", sep="\t", index=False)
+    logger.info("Export data files success!!!")
 
 
 def main():
@@ -163,7 +167,7 @@ def main():
         if len(data_dict_list) == 0:
             logger.info(f"************   {config['name']} fail to fetch data")
             continue
-        news_dict_list.append(data_dict_list)
+        news_dict_list += data_dict_list
 
     export_data(news_dict_list)
 
