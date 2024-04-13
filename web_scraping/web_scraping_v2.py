@@ -44,7 +44,7 @@ class WebScraper:
         self.language = config.get("language", "")
         self.target_categories = config.get("target_categories", [])
 
-        self.num_scroll = config.get("num_scroll", 1)
+        self.num_scroll = config.get("num_scroll", 2)
         self.news_card_identifier = config.get("news_card_identifier", "")
         self.headline_identifier = config.get("headline_identifier", "")
         self.datetime_identifier = config.get("datetime_identifier", "")
