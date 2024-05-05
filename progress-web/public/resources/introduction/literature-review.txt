@@ -1,0 +1,5 @@
+Literature Review
+
+There are news aggregator platforms like Google News that are designed to provide users with efficient and convenient access to a diverse range of news content [2]. These platforms enable users to explore topics of interest while offering a comprehensive view of the current news landscape [2]. They enhance efficiency and save valuable time by eliminating the need for users to individually visit multiple news websites [3].
+
+In recent years, researchers have been employing NLP techniques when handling textual comments from social media when creating similar platforms for event detection systems [4]. Additionally, recent surveys have highlighted a rising inclination towards utilizing multimodality models for constructing event detectors capable of incorporating both textual and image data [5]. Considering these trends, our approach involves applying NLP techniques as an initial step to analyse news data, while also exploring the feasibility to utilize multimodality models to enhance the analysis of image and video data.
