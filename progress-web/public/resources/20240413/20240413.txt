@@ -1,0 +1,6 @@
+HEHEHE
+
+lorasdf
+
+
+The motivation behind this pAAAAAols like sentiment analysis or summarization that would enable users to better understand and interpret the news content. To address this challenge, there is a clear necessity for an automated solution that not only monitors and aggregates real-time news content but also delivers insightful analysis at the same time. The project incorporates Natural Language Processing (NLP) techniques such as sentiment analysis and summarization to assist the user in analysing the news content and understand the reaction from society. We aim to develop an all-in-one platform that streamline the reader’s experience on both aggregate and analyse news content from online and social media news outlet accounts.
