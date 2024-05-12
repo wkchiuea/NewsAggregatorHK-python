@@ -1,4 +1,4 @@
-import {useEffect, useState} from "react";
+import {useLayoutEffect, useState} from "react";
 import {readFile} from "../../utils/fileReaderUtils";
 import ContentElement from "../content-element/content-element.component";
 
@@ -6,7 +6,7 @@ import ContentElement from "../content-element/content-element.component";
 const ContentBlock = ({dirPath, filePath}) => {
 
   const [fileContentList, setFileContentList] = useState([]);
-  useEffect(() => {
+  useLayoutEffect(() => {
     readFile(`${dirPath}/${filePath}`)
       .then(contentList => {
         setFileContentList(contentList);

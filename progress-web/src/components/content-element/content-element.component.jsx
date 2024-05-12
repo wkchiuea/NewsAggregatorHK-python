@@ -3,12 +3,10 @@
 const ContentElement = ({dirPath, index, content}) => {
 
   if (index === 0) {
-
     return <h4 key={index}>{content}</h4>;
 
   } else if (content.startsWith("<IMG>")) {
     const imgList = content.replace("<IMG>", "").split(",");
-
     return (
       <div className="row">
         {

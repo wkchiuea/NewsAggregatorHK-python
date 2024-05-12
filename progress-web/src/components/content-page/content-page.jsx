@@ -1,18 +1,16 @@
-import {getFileMapConfig} from "../../utils/fileReaderUtils";
+import {getFilePaths} from "../../utils/fileReaderUtils";
 import ContentBlock from "../content-block/content-block.component";
+import {useContext} from "react";
+import {FileMapContext} from "../../contexts/fileMap.context";
 
 
-const ContentPage = ({target}) => {
-
-  const [basePath, section, fileList] = getFileMapConfig(target);
+const ContentPage = ({targetPath}) => {
+  const {fileMap} = useContext(FileMapContext);
+  const [dirPath, filePath] = getFilePaths(fileMap, targetPath);
 
   return (
     <div>
-      {
-        fileList.map((filePath, index) =>
-          <ContentBlock dirPath={`${basePath}/${section}`} filePath={filePath} key={index} />
-        )
-      }
+      <ContentBlock dirPath={dirPath} filePath={filePath} />
     </div>
   );
 }

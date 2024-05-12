@@ -1,12 +1,8 @@
-import fileMap from "../fileMap.json";
 
-
-export const getProgressList = () => {
-  return fileMap["progress"];
-}
-
-export const getFileMapConfig = key => {
-  return [fileMap["basePath"], key, fileMap[key]];
+export const getFilePaths = (fileMap, key) => {
+  const dirPath = `${fileMap["basePath"]}/${key}`;
+  const filePath = `${key}.txt`;
+  return [dirPath, filePath];
 };
 
 export const readFile = filepath => {
