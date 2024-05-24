@@ -1,4 +1,5 @@
 import logging
+import re
 import requests
 from bs4 import BeautifulSoup
 from pyppeteer import launch
@@ -97,12 +98,17 @@ class WebScraper:
             if self.is_debug:
                 print("Status code :", r.status_code, "| url :", url)
 
+        scrape_time = datetime.now()
+        news_datetime = soup.select_one(datetime_identifier)
+        if news_datetime:
+            news_datetime = news_datetime.get("datetime", news_datetime.text.strip())
+
         data_dict = {
             "platform": self.name,
             "language": self.language,
             "headline": soup.select_one(headline_identifier).text.strip(),
-            "datetime": soup.select_one(datetime_identifier).text.strip(),
-            "scrapetime": datetime.now().strftime("%Y%m%d %H:%M"),
+            "datetime": news_datetime,
+            "scrapetime": scrape_time.strftime("%Y%m%d %H:%M"),
             "url": url,
             "content": soup.select_one(content_identifier).text.strip().replace("\n", " ")
         }
@@ -168,15 +174,22 @@ class WebScraper:
         return data_dict_list
 
 
-def export_data(news_dict_list):
+def export_data(news_dict_list, data_stats):
     df = pd.DataFrame(news_dict_list)
     df.to_csv(f"data/news_data_utf8.csv", sep="\t", index=False, encoding="utf-8")
     df.to_csv(f"data/news_data.csv", sep="\t", index=False)
+
+    with open(f"data/news_data_stats.csv", "w") as f:
+        f.write(datetime.now().strftime("%Y-%m-%d %H:%M"))
+        for k, v in data_stats.items():
+            f.write(f"{k}: {v}\n")
+
     logger.info("Export data files success!!!")
 
 
 @timer_func
 def main():
+    data_stats = {}
     news_dict_list = []
     for config in configs:
         logger.info(f"************   {config['name']}   ************")
@@ -186,9 +199,10 @@ def main():
         if len(data_dict_list) == 0:
             logger.info(f"************   {config['name']} fail to fetch data")
             continue
+        data_stats[config['name']] = len(data_dict_list)
         news_dict_list += data_dict_list
 
-    export_data(news_dict_list)
+    export_data(news_dict_list, data_stats)
 
 
 logger = get_logger()
