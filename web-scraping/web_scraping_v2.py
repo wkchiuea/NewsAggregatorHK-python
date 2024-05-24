@@ -5,30 +5,47 @@ from pyppeteer import launch
 import asyncio
 import nest_asyncio
 import pandas as pd
+from joblib import Parallel, delayed
+from time import time
+from datetime import datetime
 
 from config_file import configs
 
 
-# Create a logger
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)  # Set the minimum log level
+def get_logger():
 
-# Create a file handler for output file
-file_handler = logging.FileHandler('app.log')
-file_handler.setLevel(logging.DEBUG)
-# Create a console handler for output to console
-console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.DEBUG)
+    # Create a logger
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.DEBUG)  # Set the minimum log level
 
-# Create a formatter and set it for both handlers
-formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s',
-                              datefmt='%Y-%m-%d %H:%M:%S')
-file_handler.setFormatter(formatter)
-console_handler.setFormatter(formatter)
+    # Create a file handler for output file
+    file_handler = logging.FileHandler('app.log')
+    file_handler.setLevel(logging.DEBUG)
+    # Create a console handler for output to console
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.DEBUG)
 
-# Add the handlers to the logger
-logger.addHandler(file_handler)
-logger.addHandler(console_handler)
+    # Create a formatter and set it for both handlers
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s',
+                                  datefmt='%Y-%m-%d %H:%M:%S')
+    file_handler.setFormatter(formatter)
+    console_handler.setFormatter(formatter)
+
+    # Add the handlers to the logger
+    logger.addHandler(file_handler)
+    logger.addHandler(console_handler)
+
+    return logger
+
+
+def timer_func(func):
+    def wrap_func(*args, **kwargs):
+        t1 = time()
+        result = func(*args, **kwargs)
+        t2 = time()
+        print(f'Function {func.__name__!r} executed in {(t2-t1):.4f}s')
+        return result
+    return wrap_func
 
 
 class WebScraper:
@@ -65,7 +82,7 @@ class WebScraper:
 
         cards = soup.select(news_card_identifier)
         news_urls = [card.find("a").attrs["href"] if card.find("a") else card.attrs.get("href", "") for card in cards]
-        news_urls = [url for url in news_urls if len(url) > 0]
+        news_urls = [url.split("#")[0] for url in news_urls if len(url) > 0]
         news_urls = self.format_urls_to_absolute_urls(news_urls)
 
         return news_urls
@@ -85,6 +102,7 @@ class WebScraper:
             "language": self.language,
             "headline": soup.select_one(headline_identifier).text.strip(),
             "datetime": soup.select_one(datetime_identifier).text.strip(),
+            "scrapetime": datetime.now().strftime("%Y%m%d %H:%M"),
             "url": url,
             "content": soup.select_one(content_identifier).text.strip().replace("\n", " ")
         }
@@ -157,6 +175,7 @@ def export_data(news_dict_list):
     logger.info("Export data files success!!!")
 
 
+@timer_func
 def main():
     news_dict_list = []
     for config in configs:
@@ -170,6 +189,9 @@ def main():
         news_dict_list += data_dict_list
 
     export_data(news_dict_list)
+
+
+logger = get_logger()
 
 
 if __name__ == '__main__':
