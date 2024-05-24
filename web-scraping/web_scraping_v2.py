@@ -159,8 +159,12 @@ class WebScraper:
         data_dict_list = []
         for category_url in category_urls:
             logger.info("Fetching all news links ... " + category_url)
-            news_urls = self.fetch_links_in_category(category_url)
-            news_urls = list(set(news_urls))
+            news_urls = []
+            try:
+                news_urls = self.fetch_links_in_category(category_url)
+                news_urls = list(set(news_urls))
+            except Exception as e:
+                logger.error(e)
             logger.info("Total news links : " + f"{len(news_urls)}")
 
             logger.info("Fetching each news content ...")
@@ -181,10 +185,21 @@ def export_data(news_dict_list, data_stats):
 
     with open(f"data/news_data_stats.csv", "w") as f:
         f.write(datetime.now().strftime("%Y-%m-%d %H:%M"))
+        f.write("\n====================\n")
         for k, v in data_stats.items():
             f.write(f"{k}: {v}\n")
 
     logger.info("Export data files success!!!")
+
+
+def scrape_one(config):
+    webscraper = WebScraper(config)
+    data_dict_list = webscraper.start_scraping()
+    if len(data_dict_list) == 0:
+        logger.info(f"************   {config['name']} fail to fetch data")
+        return []
+
+    return data_dict_list
 
 
 @timer_func
@@ -193,12 +208,22 @@ def main():
     news_dict_list = []
     for config in configs:
         logger.info(f"************   {config['name']}   ************")
+        data_dict_list = scrape_one(config)
+        data_stats[config['name']] = len(data_dict_list)
+        news_dict_list += data_dict_list
 
-        webscraper = WebScraper(config)
-        data_dict_list = webscraper.start_scraping()
-        if len(data_dict_list) == 0:
-            logger.info(f"************   {config['name']} fail to fetch data")
-            continue
+    export_data(news_dict_list, data_stats)
+
+
+@timer_func
+def main_parallel(num_cores = 4):
+    data_stats = {}
+    news_dict_list = []
+
+    results = Parallel(n_jobs=num_cores)(delayed(scrape_one)(config) for config in configs)
+
+    for config, data_dict_list in zip(configs, results):
+        logger.info(f"************   {config['name']}   ************")
         data_stats[config['name']] = len(data_dict_list)
         news_dict_list += data_dict_list
 
@@ -210,6 +235,6 @@ logger = get_logger()
 
 if __name__ == '__main__':
     main()
-
+    # main_parallel()
 
 
