@@ -12,3 +12,6 @@
   
 ## Stop Container
 1. `docker container rm -vf web-scrap`
+
+## Run script
+`python web_scraping_v2.py [num_core]`

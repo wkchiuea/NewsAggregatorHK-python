@@ -1,3 +1,4 @@
+import argparse
 import logging
 import re
 import requests
@@ -305,8 +306,14 @@ logger = get_logger(is_file=False, is_console=True)
 
 
 if __name__ == '__main__':
-    main()
-    # main_parallel()
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(description="Run the web scraping script with specified number of cores.")
+    parser.add_argument('num_core', type=int, nargs='?', default=1,
+                        help='Number of cores to use for parallel processing (default: 1)')
+
+    args = parser.parse_args()
+
+    main_parallel(num_cores=args.num_core)
+
+    # main()
     # test()
-
-
