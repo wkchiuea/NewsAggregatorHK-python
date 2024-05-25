@@ -104,14 +104,20 @@ class WebScraper:
         if news_datetime:
             news_datetime = news_datetime.get("datetime", news_datetime.text.strip())
 
+        # Use re.sub to replace multiple spaces with a single space
+        content = soup.select_one(content_identifier).text.strip()
+        content = re.sub(r'\s+', ' ', content)
+
+        headline = soup.select_one(headline_identifier).text.strip()
+
         data_dict = {
             "platform": self.name,
             "language": self.language,
-            "headline": soup.select_one(headline_identifier).text.strip(),
+            "headline": headline,
             "datetime": news_datetime,
             "scrapetime": scrape_time.strftime("%Y%m%d %H:%M"),
             "url": url,
-            "content": soup.select_one(content_identifier).text.strip().replace("\n", " ")
+            "content": content
         }
 
         return data_dict
@@ -187,6 +193,7 @@ def export_data(news_dict_list, data_stats, total_time):
     with open(f"data/news_data_stats.csv", "w") as f:
         f.write(datetime.now().strftime("%Y-%m-%d %H:%M"))
         f.write("\nTime Spent : "+total_time+" s")
+        f.write("\nTotal Articles : "+f"{len(news_dict_list)}")
         f.write("\n====================\n")
         for k, v in data_stats.items():
             f.write(f"{k}: {v}\n")
@@ -238,11 +245,68 @@ def main_parallel(num_cores = 4):
     print(f"Total time spent: {total_time} s")
 
 
+def test():
+    url = "https://news.rthk.hk/rthk/ch/component/k2/1754367-20240523.htm"
+
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
+    }
+
+    config = {
+        "name": "rthk-zh",
+        "base_url": "https://news.rthk.hk/",
+        "language": "zh",
+        "target_categories": ["rthk/ch/latest-news/local.htm", "rthk/ch/latest-news/greater-china.htm",
+                              "rthk/ch/latest-news/world-news.htm", "rthk/ch/latest-news/finance.htm"],
+        "news_card_identifier": "div.ns2-page",
+        "headline_identifier": "h2.itemTitle",
+        "datetime_identifier": "div.createddate",
+        "content_identifier": "div.itemBody",
+        "is_debug": True
+    }
+
+    def fetch_content_in_news(self, url):
+        headline_identifier = self["headline_identifier"]
+        datetime_identifier = self["datetime_identifier"]
+        content_identifier = self["content_identifier"]
+
+        with requests.get(url, headers=headers) as r:
+            soup = BeautifulSoup(r.content, "lxml")
+            if self["is_debug"]:
+                print("Status code :", r.status_code, "| url :", url)
+
+        scrape_time = datetime.now()
+        news_datetime = soup.select_one(datetime_identifier)
+        if news_datetime:
+            news_datetime = news_datetime.get("datetime", news_datetime.text.strip())
+
+        # Use re.sub to replace multiple spaces with a single space
+        content = soup.select_one(content_identifier).text.strip()
+        content = re.sub(r'\s+', ' ', content)
+
+        data_dict = {
+            "platform": self["name"],
+            "language": self["language"],
+            "headline": soup.select_one(headline_identifier).text.strip(),
+            "datetime": news_datetime,
+            "scrapetime": scrape_time.strftime("%Y%m%d %H:%M"),
+            "url": url,
+            "content": content
+        }
+
+        print(data_dict)
+
+        return data_dict
+
+    fetch_content_in_news(config, url)
+
+
 logger = get_logger(is_file=False, is_console=True)
 
 
 if __name__ == '__main__':
-    # main()
-    main_parallel()
+    main()
+    # main_parallel()
+    # test()
 
 
