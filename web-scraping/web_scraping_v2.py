@@ -18,7 +18,8 @@ from config_file import configs
 
 client = MongoClient('mongodb://localhost:27017/')
 db = client['raw_news']
-collection = db['news_data']
+news_data_collection = db['news_data']
+job_log_collection = db['job_log']
 
 
 def get_logger(is_file=False, is_console=False):
@@ -172,11 +173,15 @@ class WebScraper:
         return list(set(news_urls) - existing_urls)
 
     def _get_urls_from_db(self, platform):
-        existing_urls = collection.find(
-            {"platform": platform},
-            {"url": 1, "_id": 0}  # Only fetch the 'url' field
-        )
-        return {doc['url'] for doc in existing_urls}
+        try:
+            existing_urls = news_data_collection.find(
+                {"platform": platform},
+                {"url": 1, "_id": 0}  # Only fetch the 'url' field
+            )
+            return {doc['url'] for doc in existing_urls}
+        except Exception as e:
+            logging.error(e)
+            return set()
 
     def get_category_urls(self):
         category_urls = [self.base_url + path for path in self.target_categories]
@@ -211,16 +216,16 @@ class WebScraper:
         return data_dict_list
 
 
-def export_data(news_dict_list, data_stats, total_time, num_cores):
+def export_data(news_dict_list, data_stats, t1, t2, num_cores):
     df = pd.DataFrame(news_dict_list)
-    df.to_csv(f"data/news_data_utf8.csv", sep="\t", index=False, encoding="utf-8")
     df.to_csv(f"data/news_data.csv", sep="\t", index=False)
 
     with open(f"data/news_data_stats.csv", "w") as f:
-        f.write(datetime.now().strftime("%Y-%m-%d %H:%M"))
-        f.write(f"\nNum cores : {num_cores}")
-        f.write(f"\nTime Spent : {total_time} s")
-        f.write(f"\nTotal Articles : {len(news_dict_list)}")
+        f.write(f"Start Time :{t1.strftime('%Y-%m-%d %H:%M')}\n")
+        f.write(f"End Time :{t2.strftime('%Y-%m-%d %H:%M')}\n")
+        f.write(f"Num cores : {num_cores}\n")
+        f.write(f"Time Spent : {t2-t1:.4f} s\n")
+        f.write(f"Total Articles : {len(news_dict_list)}\n")
         f.write("\n============================\n")
         for k, v in data_stats.items():
             f.write(f"{k}: {v}\n")
@@ -228,9 +233,31 @@ def export_data(news_dict_list, data_stats, total_time, num_cores):
     logger.info("Export data files success!!!")
 
 
+def format_job_log_data(news_dict_list, data_stats, t1, t2, num_cores):
+    job_log_data = {
+        "start_time": t1.strftime('%Y-%m-%d %H:%M'),
+        "end_time": t2.strftime('%Y-%m-%d %H:%M'),
+        "num_cores": num_cores,
+        "time_spent": (t2 - t1).total_seconds(),
+        "total_articles": len(news_dict_list),
+        "data_stats": data_stats
+    }
+    return job_log_data
+
+
+def save_job_log_to_db(job_log_data):
+    try:
+        job_log_collection.insert_one(job_log_data)
+    except Exception as e:
+        logger.error(e)
+
+
 def save_data_to_db(news_dict_list):
-    result = collection.insert_many(news_dict_list)
-    print(f"Inserted IDs: {result.inserted_ids}")
+    try:
+        result = news_data_collection.insert_many(news_dict_list)
+        print(f"Inserted IDs: {result.inserted_ids}")
+    except Exception as e:
+        logger.error(e)
 
 
 def scrape_one(config):
@@ -243,23 +270,7 @@ def scrape_one(config):
     return data_dict_list
 
 
-def main():
-    data_stats = {}
-    news_dict_list = []
-    t1 = time()
-    for config in configs:
-        logger.info(f"************   {config['name']}   ************")
-        data_dict_list = scrape_one(config)
-        data_stats[config['name']] = len(data_dict_list)
-        news_dict_list += data_dict_list
-
-    t2 = time()
-    total_time = f"{t2-t1:.4f}"
-    export_data(news_dict_list, data_stats, total_time)
-    print(f"Total time spent: {total_time} s")
-
-
-def main_parallel(num_cores = 4):
+def main(num_cores = 1):
     data_stats = {}
     news_dict_list = []
     t1 = time()
@@ -272,10 +283,11 @@ def main_parallel(num_cores = 4):
         news_dict_list += data_dict_list
 
     t2 = time()
-    total_time = f"{t2-t1:.4f}"
-    export_data(news_dict_list, data_stats, total_time, num_cores)
+    job_log_data = format_job_log_data(news_dict_list, data_stats, t1, t2, num_cores)
+    save_job_log_to_db(job_log_data)
     save_data_to_db(news_dict_list)
-    print(f"Total time spent: {total_time} s")
+    # export_data(news_dict_list, data_stats, t1, t2, num_cores)
+    print(f"Total time spent: {t2-t1:.4f} s")
 
 
 def test():
@@ -345,7 +357,4 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    main_parallel(num_cores=args.num_core)
-
-    # main()
-    # test()
+    main(num_cores=args.num_core)
