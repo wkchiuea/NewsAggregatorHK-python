@@ -186,16 +186,17 @@ class WebScraper:
         return data_dict_list
 
 
-def export_data(news_dict_list, data_stats, total_time):
+def export_data(news_dict_list, data_stats, total_time, num_cores):
     df = pd.DataFrame(news_dict_list)
     df.to_csv(f"data/news_data_utf8.csv", sep="\t", index=False, encoding="utf-8")
     df.to_csv(f"data/news_data.csv", sep="\t", index=False)
 
     with open(f"data/news_data_stats.csv", "w") as f:
         f.write(datetime.now().strftime("%Y-%m-%d %H:%M"))
-        f.write("\nTime Spent : "+total_time+" s")
-        f.write("\nTotal Articles : "+f"{len(news_dict_list)}")
-        f.write("\n====================\n")
+        f.write(f"\nNum cores : {num_cores}")
+        f.write(f"\nTime Spent : {total_time} s")
+        f.write(f"\nTotal Articles : {len(news_dict_list)}")
+        f.write("\n============================\n")
         for k, v in data_stats.items():
             f.write(f"{k}: {v}\n")
 
@@ -242,7 +243,7 @@ def main_parallel(num_cores = 4):
 
     t2 = time()
     total_time = f"{t2-t1:.4f}"
-    export_data(news_dict_list, data_stats, total_time)
+    export_data(news_dict_list, data_stats, total_time, num_cores)
     print(f"Total time spent: {total_time} s")
 
 
