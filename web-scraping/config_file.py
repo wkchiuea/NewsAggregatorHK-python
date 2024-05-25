@@ -1,6 +1,8 @@
 configs = (
     {
         "name": "sina",
+        "name_zh": "新浪香港",
+        "name_en": "sina-hk",
         "base_url": "https://portal.sina.com.hk/",
         "language": "zh",
         "target_categories": ["category/news-hongkong/", "category/news-china/", "category/news-intl/", "category/finance/"],
@@ -13,6 +15,8 @@ configs = (
     },
     {
         "name": "hket",
+        "name_zh": "香港經濟日報",
+        "name_en": "Hong Kong Economics Times",
         "base_url": "https://inews.hket.com/",
         "language": "zh",
         "target_categories": ["sran009/即市財經", "sran011/國際"],
@@ -25,10 +29,12 @@ configs = (
     },
     {
         "name": "hk01",
+        "name_zh": "香港01",
+        "name_en": "HK01",
         "base_url": "https://www.hk01.com/",
         "language": "zh",
-        "target_categories": ["channel/2/社會新聞", "channel/364/即時中國", "channel/19/即時國際", "channel/396/財經快訊"],
-        "categories": ["hongkong", "china", "intl", "finance"],
+        "target_categories": ["channel/421/天氣", "channel/2/社會新聞", "channel/364/即時中國", "channel/19/即時國際", "channel/396/財經快訊"],
+        "categories": ["weather", "hongkong", "china", "intl", "finance"],
         "news_card_identifier": "div.content-card__main",
         "headline_identifier": "#articleTitle",
         "datetime_identifier": "time",
@@ -37,6 +43,8 @@ configs = (
     },
     {
         "name": "std",
+        "name_zh": "星島日報",
+        "name_en": "Sing Tao",
         "base_url": "https://std.stheadline.com/",
         "language": "zh",
         "target_categories": ["realtime/hongkong/即時-港聞", "realtime/international/即時-國際", "realtime/china/即時-中國", "realtime/finance/即時-財經"],
@@ -49,6 +57,8 @@ configs = (
     },
     {
         "name": "stheadline",
+        "name_zh": "星島頭條",
+        "name_en": "Sing Tao Headline",
         "base_url": "https://www.stheadline.com/",
         "language": "zh",
         "target_categories": ["news/港聞", "china/中國", "world/國際", "finance/財經"],
@@ -61,6 +71,8 @@ configs = (
     },
     {
         "name": "mingpao",
+        "name_zh": "明報",
+        "name_en": "Ming Pao",
         "base_url": "https://news.mingpao.com/",
         "language": "zh",
         "target_categories": ["ins/港聞/section/20240412/s00001", "ins/兩岸/section/20240412/s00004", "ins/國際/section/20240412/s00005"],
@@ -73,6 +85,8 @@ configs = (
     },
     {
         "name": "am730",
+        "name_zh": "am730",
+        "name_en": "am730",
         "base_url": "https://www.am730.com.hk/",
         "language": "zh",
         "target_categories": ["本地", "國際", "中國", "財經"],
@@ -85,6 +99,8 @@ configs = (
     },
     {
         "name": "oncc",
+        "name_zh": "東方日報",
+        "name_en": "Oriental Daily News",
         "base_url": "https://hk.on.cc/",
         "language": "zh",
         "target_categories": ["hk/news/index.html", "hk/cnnews/index.html", "hk/intnews/index.html", "hk/finance/index.html"],
@@ -97,6 +113,8 @@ configs = (
     },
     {
         "name": "now",
+        "name_zh": "Now 新聞",
+        "name_en": "Now News",
         "base_url": "https://news.now.com/",
         "language": "zh",
         "target_categories": ["home/local", "home/international", "home/finance"],
@@ -109,6 +127,8 @@ configs = (
     },
     {
         "name": "hkej",
+        "name_zh": "信報",
+        "name_en": "Hong Kong Economic Journal",
         "base_url": "http://www2.hkej.com/",
         "language": "zh",
         "target_categories": ["instantnews/hongkong", "instantnews/china", "instantnews/international"],
@@ -121,6 +141,8 @@ configs = (
     },
     {
         "name": "tvb",
+        "name_zh": "無線新聞",
+        "name_en": "TVB News",
         "base_url": "https://news.tvb.com/",
         "language": "zh",
         "target_categories": ["tc/local", "tc/greaterchina", "tc/world", "tc/finance"],
@@ -133,6 +155,8 @@ configs = (
     },
     {
         "name": "rthk-zh",
+        "name_zh": "香港電台中文新聞",
+        "name_en": "RTHK Chinese News",
         "base_url": "https://news.rthk.hk/",
         "language": "zh",
         "target_categories": ["rthk/ch/latest-news/local.htm", "rthk/ch/latest-news/greater-china.htm", "rthk/ch/latest-news/world-news.htm", "rthk/ch/latest-news/finance.htm"],
@@ -145,6 +169,8 @@ configs = (
     },
     {
         "name": "rthk-en",
+        "name_zh": "香港電台英文新聞",
+        "name_en": "RTHK English News",
         "base_url": "https://news.rthk.hk/",
         "language": "en",
         "target_categories": ["rthk/en/latest-news/local.htm", "rthk/en/latest-news/greater-china.htm", "rthk/en/latest-news/world-news.htm", "rthk/en/latest-news/finance.htm"],
@@ -157,6 +183,8 @@ configs = (
     },
     {
         "name": "scmp",
+        "name_zh": "南華早報",
+        "name_en": "South China Morning Post",
         "base_url": "https://www.scmp.com/",
         "language": "en",
         "target_categories": ["news/hong-kong", "news/china", "economy", "news/world"],
@@ -169,6 +197,8 @@ configs = (
     },
     {
         "name": "wenweipo",
+        "name_zh": "文匯報",
+        "name_en": "Wen Wei Po",
         "base_url": "https://www.wenweipo.com/",
         "language": "zh",
         "target_categories": ["immed/hongkong", "immed/inland", "immed/world"],
@@ -181,6 +211,8 @@ configs = (
     },
     {
         "name": "takungpao",
+        "name_zh": "大公報",
+        "name_en": "Ta Kung Pao",
         "base_url": "http://www.takungpao.com.hk/",
         "language": "zh",
         "target_categories": ["hongkong/", "mainland/", "international/", "finance/"],
