@@ -59,10 +59,13 @@ class WebScraper:
 
     def __init__(self, config):
         self.name = config.get("name", "")
+        self.name_zh = config.get("name_zh", "")
+        self.name_en = config.get("name_en", "")
         self.language = config.get("language", "")
         self.base_url = config.get("base_url", "")
         self.language = config.get("language", "")
         self.target_categories = config.get("target_categories", [])
+        self.categories = config.get("categories", [])
 
         self.num_scroll = config.get("num_scroll", 2)
         self.news_card_identifier = config.get("news_card_identifier", "")
@@ -90,7 +93,7 @@ class WebScraper:
 
         return news_urls
 
-    def fetch_content_in_news(self, url):
+    def fetch_content_in_news(self, url, category):
         headline_identifier = self.headline_identifier
         datetime_identifier = self.datetime_identifier
         content_identifier = self.content_identifier
@@ -113,7 +116,10 @@ class WebScraper:
 
         data_dict = {
             "platform": self.name,
+            "name_zh": self.name_zh,
+            "name_en": self.name_en,
             "language": self.language,
+            "category": category,
             "headline": headline,
             "datetime": news_datetime,
             "scrapetime": scrape_time.strftime("%Y%m%d %H:%M"),
@@ -161,11 +167,12 @@ class WebScraper:
 
     def start_scraping(self):
         category_urls = self.get_category_urls()
+        categories = self.categories
         logger.info("Category URLs : ")
         logger.info(category_urls)
 
         data_dict_list = []
-        for category_url in category_urls:
+        for category_url, category in zip(category_urls, categories):
             logger.info("Fetching all news links ... " + category_url)
             news_urls = []
             try:
@@ -179,7 +186,7 @@ class WebScraper:
             for news_url in news_urls:
                 try:
                     logger.info("Fetching " + news_url)
-                    data_dict_list.append(self.fetch_content_in_news(news_url))
+                    data_dict_list.append(self.fetch_content_in_news(news_url, category))
                 except Exception as e:
                     logger.error(e)
 
