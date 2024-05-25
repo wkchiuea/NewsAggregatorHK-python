@@ -5,13 +5,20 @@ import requests
 from bs4 import BeautifulSoup
 from pyppeteer import launch
 import asyncio
-import nest_asyncio
 import pandas as pd
+from pymongo import MongoClient
 from joblib import Parallel, delayed
 from time import time
 from datetime import datetime
 
 from config_file import configs
+
+
+
+
+client = MongoClient('mongodb://localhost:27017/')
+db = client['raw_news']
+collection = db['news_data']
 
 
 def get_logger(is_file=False, is_console=False):
@@ -161,6 +168,16 @@ class WebScraper:
 
         return abs_urls
 
+    def _remove_existing_urls(self, news_urls, existing_urls):
+        return list(set(news_urls) - existing_urls)
+
+    def _get_urls_from_db(self, platform):
+        existing_urls = collection.find(
+            {"platform": platform},
+            {"url": 1, "_id": 0}  # Only fetch the 'url' field
+        )
+        return {doc['url'] for doc in existing_urls}
+
     def get_category_urls(self):
         category_urls = [self.base_url + path for path in self.target_categories]
         return category_urls
@@ -177,7 +194,8 @@ class WebScraper:
             news_urls = []
             try:
                 news_urls = self.fetch_links_in_category(category_url)
-                news_urls = list(set(news_urls))
+                existing_urls = self._get_urls_from_db(self.name)
+                news_urls = self._remove_existing_urls(news_urls, existing_urls)
             except Exception as e:
                 logger.error(e)
             logger.info("Total news links : " + f"{len(news_urls)}")
@@ -208,6 +226,11 @@ def export_data(news_dict_list, data_stats, total_time, num_cores):
             f.write(f"{k}: {v}\n")
 
     logger.info("Export data files success!!!")
+
+
+def save_data_to_db(news_dict_list):
+    result = collection.insert_many(news_dict_list)
+    print(f"Inserted IDs: {result.inserted_ids}")
 
 
 def scrape_one(config):
@@ -251,6 +274,7 @@ def main_parallel(num_cores = 4):
     t2 = time()
     total_time = f"{t2-t1:.4f}"
     export_data(news_dict_list, data_stats, total_time, num_cores)
+    save_data_to_db(news_dict_list)
     print(f"Total time spent: {total_time} s")
 
 

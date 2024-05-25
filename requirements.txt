@@ -1,0 +1,10 @@
+requests_html
+pyppeteer
+joblib
+pandas
+beautifulsoup4
+pymongo
+Flask
+Flask-Restful
+Flask-JWT
+Flask-SQLAlchemy
