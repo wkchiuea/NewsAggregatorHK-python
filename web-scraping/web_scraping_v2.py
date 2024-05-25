@@ -13,28 +13,29 @@ from datetime import datetime
 from config_file import configs
 
 
-def get_logger():
+def get_logger(is_file=False, is_console=False):
 
     # Create a logger
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.DEBUG)  # Set the minimum log level
 
-    # Create a file handler for output file
-    file_handler = logging.FileHandler('app.log')
-    file_handler.setLevel(logging.DEBUG)
-    # Create a console handler for output to console
-    console_handler = logging.StreamHandler()
-    console_handler.setLevel(logging.DEBUG)
-
     # Create a formatter and set it for both handlers
     formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s',
                                   datefmt='%Y-%m-%d %H:%M:%S')
-    file_handler.setFormatter(formatter)
-    console_handler.setFormatter(formatter)
 
-    # Add the handlers to the logger
-    logger.addHandler(file_handler)
-    logger.addHandler(console_handler)
+    if is_file:
+        # Create a file handler for output file
+        file_handler = logging.FileHandler('app.log')
+        file_handler.setLevel(logging.DEBUG)
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+
+    if is_console:
+        # Create a console handler for output to console
+        console_handler = logging.StreamHandler()
+        console_handler.setLevel(logging.DEBUG)
+        console_handler.setFormatter(formatter)
+        logger.addHandler(console_handler)
 
     return logger
 
@@ -178,13 +179,14 @@ class WebScraper:
         return data_dict_list
 
 
-def export_data(news_dict_list, data_stats):
+def export_data(news_dict_list, data_stats, total_time):
     df = pd.DataFrame(news_dict_list)
     df.to_csv(f"data/news_data_utf8.csv", sep="\t", index=False, encoding="utf-8")
     df.to_csv(f"data/news_data.csv", sep="\t", index=False)
 
     with open(f"data/news_data_stats.csv", "w") as f:
         f.write(datetime.now().strftime("%Y-%m-%d %H:%M"))
+        f.write("\nTime Spent : "+total_time+" s")
         f.write("\n====================\n")
         for k, v in data_stats.items():
             f.write(f"{k}: {v}\n")
@@ -202,23 +204,26 @@ def scrape_one(config):
     return data_dict_list
 
 
-@timer_func
 def main():
     data_stats = {}
     news_dict_list = []
+    t1 = time()
     for config in configs:
         logger.info(f"************   {config['name']}   ************")
         data_dict_list = scrape_one(config)
         data_stats[config['name']] = len(data_dict_list)
         news_dict_list += data_dict_list
 
-    export_data(news_dict_list, data_stats)
+    t2 = time()
+    total_time = f"{t2-t1:.4f}"
+    export_data(news_dict_list, data_stats, total_time)
+    print(f"Total time spent: {total_time} s")
 
 
-@timer_func
 def main_parallel(num_cores = 4):
     data_stats = {}
     news_dict_list = []
+    t1 = time()
 
     results = Parallel(n_jobs=num_cores)(delayed(scrape_one)(config) for config in configs)
 
@@ -227,14 +232,17 @@ def main_parallel(num_cores = 4):
         data_stats[config['name']] = len(data_dict_list)
         news_dict_list += data_dict_list
 
-    export_data(news_dict_list, data_stats)
+    t2 = time()
+    total_time = f"{t2-t1:.4f}"
+    export_data(news_dict_list, data_stats, total_time)
+    print(f"Total time spent: {total_time} s")
 
 
-logger = get_logger()
+logger = get_logger(is_file=False, is_console=True)
 
 
 if __name__ == '__main__':
-    main()
-    # main_parallel()
+    # main()
+    main_parallel()
 
 
