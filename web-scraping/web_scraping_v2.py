@@ -75,6 +75,8 @@ class WebScraper:
         self.target_categories = config.get("target_categories", [])
         self.categories = config.get("categories", [])
 
+        self.existing_urls = config.get("existing_urls", set())
+
         self.num_scroll = config.get("num_scroll", 2)
         self.news_card_identifier = config.get("news_card_identifier", "")
         self.headline_identifier = config.get("headline_identifier", "")
@@ -172,17 +174,6 @@ class WebScraper:
     def _remove_existing_urls(self, news_urls, existing_urls):
         return list(set(news_urls) - existing_urls)
 
-    def _get_urls_from_db(self, platform):
-        try:
-            existing_urls = news_data_collection.find(
-                {"platform": platform},
-                {"url": 1, "_id": 0}  # Only fetch the 'url' field
-            )
-            return {doc['url'] for doc in existing_urls}
-        except Exception as e:
-            logging.error(e)
-            return set()
-
     def get_category_urls(self):
         category_urls = [self.base_url + path for path in self.target_categories]
         return category_urls
@@ -199,8 +190,7 @@ class WebScraper:
             news_urls = []
             try:
                 news_urls = self.fetch_links_in_category(category_url)
-                existing_urls = self._get_urls_from_db(self.name)
-                news_urls = self._remove_existing_urls(news_urls, existing_urls)
+                news_urls = self._remove_existing_urls(news_urls, self.existing_urls)
             except Exception as e:
                 logger.error(e)
             logger.info("Total news links : " + f"{len(news_urls)}")
@@ -260,6 +250,24 @@ def save_data_to_db(news_dict_list):
         logger.error(e)
 
 
+def get_urls_from_db(platform):
+    try:
+        existing_urls = news_data_collection.find(
+            {"platform": platform},
+            {"url": 1, "_id": 0}  # Only fetch the 'url' field
+        )
+        return {doc['url'] for doc in existing_urls}
+    except Exception as e:
+        logging.error(e)
+        return set()
+
+
+def add_existing_urls_to_config(_configs):
+    for config in _configs:
+        config['existing_urls'] = get_urls_from_db(config['name'])
+    return _configs
+
+
 def scrape_one(config):
     webscraper = WebScraper(config)
     data_dict_list = webscraper.start_scraping()
@@ -275,9 +283,10 @@ def main(num_cores = 1):
     news_dict_list = []
     t1 = time()
 
-    results = Parallel(n_jobs=num_cores)(delayed(scrape_one)(config) for config in configs)
+    configs_ = add_existing_urls_to_config(configs)
+    results = Parallel(n_jobs=num_cores)(delayed(scrape_one)(config) for config in configs_)
 
-    for config, data_dict_list in zip(configs, results):
+    for config, data_dict_list in zip(configs_, results):
         logger.info(f"************   {config['name']}   ************")
         data_stats[config['name']] = len(data_dict_list)
         news_dict_list += data_dict_list

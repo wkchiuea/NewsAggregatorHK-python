@@ -1,4 +1,4 @@
-configs = (
+configs = [
     {
         "name": "sina",
         "name_zh": "新浪香港",
@@ -223,4 +223,4 @@ configs = (
         "content_identifier": "div.tkp_content",
         "is_debug": True
     }
-)
+]
