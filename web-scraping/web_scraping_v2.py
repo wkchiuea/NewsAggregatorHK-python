@@ -130,7 +130,7 @@ class WebScraper:
             "category": category,
             "headline": headline,
             "datetime": news_datetime,
-            "scrapetime": scrape_time.strftime("%Y%m%d %H:%M"),
+            "scrapetime": scrape_time,
             "url": url,
             "content": content
         }
