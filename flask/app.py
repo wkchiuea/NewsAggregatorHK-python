@@ -46,6 +46,9 @@ class NewsResource(Resource):
                 "$lte": end_datetime
             }
 
+        if 'platform' in query_params:
+            query['platform'] = query_params['platform']
+
         # Query the MongoDB collection
         result = list(news_data_collection.find(query, {"_id": 0}))
 
