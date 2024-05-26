@@ -223,12 +223,12 @@ def export_data(news_dict_list, data_stats, t1, t2, num_cores):
     logger.info("Export data files success!!!")
 
 
-def format_job_log_data(news_dict_list, data_stats, t1, t2, num_cores):
+def format_job_log_data(news_dict_list, data_stats, dt1, dt2, num_cores):
     job_log_data = {
-        "start_time": t1.strftime('%Y-%m-%d %H:%M'),
-        "end_time": t2.strftime('%Y-%m-%d %H:%M'),
+        "start_time": dt1.strftime('%Y-%m-%d %H:%M'),
+        "end_time": dt2.strftime('%Y-%m-%d %H:%M'),
         "num_cores": num_cores,
-        "time_spent": (t2 - t1).total_seconds(),
+        "time_spent": (dt2 - dt1).total_seconds(),
         "total_articles": len(news_dict_list),
         "data_stats": data_stats
     }
@@ -282,6 +282,7 @@ def main(num_cores = 1):
     data_stats = {}
     news_dict_list = []
     t1 = time()
+    dt1 = datetime.now()
 
     configs_ = add_existing_urls_to_config(configs)
     results = Parallel(n_jobs=num_cores)(delayed(scrape_one)(config) for config in configs_)
@@ -292,7 +293,8 @@ def main(num_cores = 1):
         news_dict_list += data_dict_list
 
     t2 = time()
-    job_log_data = format_job_log_data(news_dict_list, data_stats, t1, t2, num_cores)
+    dt2 = datetime.now()
+    job_log_data = format_job_log_data(news_dict_list, data_stats, dt1, dt2, num_cores)
     save_job_log_to_db(job_log_data)
     save_data_to_db(news_dict_list)
     # export_data(news_dict_list, data_stats, t1, t2, num_cores)
