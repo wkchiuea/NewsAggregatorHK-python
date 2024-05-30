@@ -41,9 +41,6 @@ sudo alternatives --set python3 /usr/bin/python3.8
 # Verify the Python version
 python3 --version
 
-# Install virtualenv package
-sudo pip3 install virtualenv
-
 # Set Timezone
 sudo timedatectl set-timezone Asia/Hong_Kong
 
@@ -53,15 +50,8 @@ git clone -b test/aws-web-scraping https://github.com/wkchiuea/NewsAggregatorHK-
 # Navigate to the repository directory
 cd /home/ec2-user/myrepo/web-scraping
 
-# Create and activate a Python virtual environment
-python3 -m venv venv
-source venv/bin/activate
-
 # Install the required Python packages using pip within the virtual environment
-pip install -r requirements.txt
-
-# Deactivate the virtual environment
-deactivate
+pip3 install -r requirements.txt
 
 # Install MongoDB
 sudo tee /etc/yum.repos.d/mongodb-org-4.4.repo <<EOF
@@ -74,13 +64,14 @@ gpgkey=https://www.mongodb.org/static/pgp/server-4.4.asc
 EOF
 
 sudo yum install -y mongodb-org
+sudo yum install -y mongodb-mongosh
 
 # Start MongoDB service
 sudo systemctl start mongod
 sudo systemctl enable mongod
 
 # Create MongoDB collections
-mongo <<EOF
+mongosh <<EOF
 use raw_news;
 db.createCollection("news_data");
 db.createCollection("comments");
@@ -90,7 +81,7 @@ EOF
 
 # Set up a cron job to run the scripts every hour
 # Add the cron job to the crontab
-#(crontab -l 2>/dev/null; echo "0 * * * * /home/ec2-user/myrepo/venv/bin/python /home/ec2-user/myrepo/web-scraping/web_scraping_v2.py") | crontab -
+(crontab -l 2>/dev/null; echo "0 * * * * /home/ec2-user/myrepo/venv/bin/python /home/ec2-user/myrepo/web-scraping/web_scraping_v2.py") | crontab -
 #(crontab -l 2>/dev/null; echo "30 * * * * /home/ec2-user/myrepo/venv/bin/python /home/ec2-user/myrepo/web-scraping/fb_comment.py 25 --comments_limit 50") | crontab -
 
 # Print a message indicating that the setup is complete
