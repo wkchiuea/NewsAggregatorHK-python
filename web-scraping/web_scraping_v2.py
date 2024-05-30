@@ -279,6 +279,7 @@ def main(num_cores = 1):
         data_dict_list = scrape_one(config)
         data_stats[config['name']] = len(data_dict_list)
         news_dict_list += data_dict_list
+        break
 
     t2 = time()
     dt2 = datetime.now()
