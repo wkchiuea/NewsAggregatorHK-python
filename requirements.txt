@@ -8,3 +8,5 @@ Flask
 Flask-Restful
 Flask-JWT
 Flask-SQLAlchemy
+pyautogen
+apify-client

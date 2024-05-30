@@ -161,3 +161,4 @@ cython_debug/
 
 # Custom
 # *.ipynb
+/web-scraping/secrets.txt
