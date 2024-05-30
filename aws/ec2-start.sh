@@ -72,7 +72,7 @@ sudo systemctl start mongod
 sudo systemctl enable mongod
 
 # Create MongoDB collections
-mongosh <<EOF
+sudo mongosh <<EOF
 use raw_news;
 db.createCollection("news_data");
 db.createCollection("comments");
@@ -82,7 +82,8 @@ EOF
 
 # Set up a cron job to run the scripts every hour
 # Add the cron job to the crontab
-echo "30 * * * * /usr/bin/python3 /home/ec2-user/myrepo/web-scraping/web_scraping_v2.py >> /home/ec2-user/myrepo/web-scraping/web_scraping_v2.log 2>&1" | crontab -u ec2-user -
+echo "0 * * * * /usr/bin/python3 /home/ec2-user/myrepo/web-scraping/web_scraping_v2.py" | sudo crontab -u ec2-user -
+#echo "0 * * * * /usr/bin/python3 /home/ec2-user/myrepo/web-scraping/web_scraping_v2.py >> /home/ec2-user/myrepo/web-scraping/web_scraping_v2.log 2>&1" | sudo crontab -u ec2-user -
 #(crontab -l 2>/dev/null; echo "30 * * * * /home/ec2-user/myrepo/venv/bin/python /home/ec2-user/myrepo/web-scraping/fb_comment.py 25 --comments_limit 50") | crontab -
 
 # Create the logrotate configuration for the log file
