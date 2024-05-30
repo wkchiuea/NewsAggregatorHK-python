@@ -6,7 +6,6 @@ from bs4 import BeautifulSoup
 from pyppeteer import launch
 import asyncio
 from pymongo import MongoClient
-from joblib import Parallel, delayed
 from time import time
 from datetime import datetime
 
@@ -139,7 +138,15 @@ class WebScraper:
         return data_dict
 
     async def scroll_and_scrape(self, url, num_scroll=3):
-        browser = await launch()
+        browser = await launch(headless=True, args=[
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-accelerated-2d-canvas',
+            '--disable-gpu',
+            '--no-zygote',
+            '--single-process',
+        ])
         page = await browser.newPage()
         await page.setUserAgent(self.headers['User-Agent'])
         await page.goto(url, {"timeout": 60000})
@@ -267,8 +274,6 @@ def main(num_cores = 1):
     dt1 = datetime.now()
 
     configs_ = add_existing_urls_to_config(configs)
-    results = Parallel(n_jobs=num_cores)(delayed(scrape_one)(config) for config in configs_)
-
     for config in configs_:
         logger.info(f"************   {config['name']}   ************")
         data_dict_list = scrape_one(config)
