@@ -81,7 +81,7 @@ EOF
 
 # Set up a cron job to run the scripts every hour
 # Add the cron job to the crontab
-(crontab -l 2>/dev/null; echo "0 * * * * /home/ec2-user/myrepo/venv/bin/python /home/ec2-user/myrepo/web-scraping/web_scraping_v2.py") | crontab -
+(crontab -l 2>/dev/null; echo "0 * * * * /usr/bin/python3 /home/ec2-user/myrepo/web-scraping/web_scraping_v2.py") | crontab -
 #(crontab -l 2>/dev/null; echo "30 * * * * /home/ec2-user/myrepo/venv/bin/python /home/ec2-user/myrepo/web-scraping/fb_comment.py 25 --comments_limit 50") | crontab -
 
 # Print a message indicating that the setup is complete
