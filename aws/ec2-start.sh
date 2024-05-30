@@ -5,6 +5,7 @@
 sudo yum update -y
 sudo yum install -y tzdata
 sudo yum install -y git
+sudo yum install -y logrotate
 
 sudo yum install -y \
     alsa-lib \
@@ -71,7 +72,7 @@ sudo systemctl start mongod
 sudo systemctl enable mongod
 
 # Create MongoDB collections
-mongosh <<EOF
+sudo mongosh <<EOF
 use raw_news;
 db.createCollection("news_data");
 db.createCollection("comments");
@@ -84,8 +85,48 @@ EOF
 
 # Set up a cron job to run the scrape.py script every hour
 # Add the cron job to the crontab
-(crontab -l 2>/dev/null; echo "0 * * * * /usr/bin/python3 /home/ec2-user/myrepo/web-scraping/web_scraping_v2.py") | crontab -
-(crontab -l 2>/dev/null; echo "30 * * * * /usr/bin/python3 /home/ec2-user/myrepo/web-scraping/fb_comment.py 25 --comments_limit 50") | crontab -
+echo "0 * * * * /usr/bin/python3 /home/ec2-user/myrepo/web-scraping/web_scraping_v2.py >> /home/ec2-user/myrepo/web-scraping/web_scraping_v2.log 2>&1" | sudo crontab -
+echo "30 * * * * /usr/bin/python3 /home/ec2-user/myrepo/web-scraping/fb_comment.py 25 --comments_limit 50 >> /home/ec2-user/myrepo/web-scraping/fb_comment.log 2>&1" | sudo crontab -
+
+# web_scraping_v2.py
+# Create the logrotate configuration for the log file
+cat <<EOF > /etc/logrotate.d/web_scraping_v2
+/home/ec2-user/myrepo/web-scraping/web_scraping_v2.log {
+    daily
+    rotate 7
+    compress
+    missingok
+    notifempty
+    create 0644 root root
+    postrotate
+        /usr/bin/systemctl reload crond > /dev/null 2>&1 || true
+    endscript
+}
+EOF
+
+# Ensure correct permissions for the logrotate configuration
+chown root:root /etc/logrotate.d/web_scraping_v2
+chmod 644 /etc/logrotate.d/web_scraping_v2
+
+# fb_comment.py
+# Create the logrotate configuration for the log file
+cat <<EOF > /etc/logrotate.d/fb_comment
+/home/ec2-user/myrepo/web-scraping/fb_comment.log {
+    daily
+    rotate 7
+    compress
+    missingok
+    notifempty
+    create 0644 root root
+    postrotate
+        /usr/bin/systemctl reload crond > /dev/null 2>&1 || true
+    endscript
+}
+EOF
+
+# Ensure correct permissions for the logrotate configuration
+chown root:root /etc/logrotate.d/fb_comment
+chmod 644 /etc/logrotate.d/fb_comment
 
 # Print a message indicating that the setup is complete
 echo "Setup complete. The web_scraping_v2.py script will run every hour."
