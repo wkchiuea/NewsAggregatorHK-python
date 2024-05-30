@@ -1,3 +1,7 @@
-requests_html
-pyppeteer
+requests==2.18.4
+urllib3==1.26
+pyppeteer==2.1.1
 joblib
+beautifulsoup4
+lxml
+pymongo
