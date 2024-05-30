@@ -15,3 +15,4 @@
 
 ## Run script
 `python web_scraping_v2.py [num_core]`
+`mongosh "mongodb://localhost:27017"`

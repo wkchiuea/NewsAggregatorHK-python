@@ -5,9 +5,7 @@ import requests
 from bs4 import BeautifulSoup
 from pyppeteer import launch
 import asyncio
-import pandas as pd
 from pymongo import MongoClient
-from joblib import Parallel, delayed
 from time import time
 from datetime import datetime
 
@@ -140,7 +138,15 @@ class WebScraper:
         return data_dict
 
     async def scroll_and_scrape(self, url, num_scroll=3):
-        browser = await launch()
+        browser = await launch(headless=True, args=[
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-accelerated-2d-canvas',
+            '--disable-gpu',
+            '--no-zygote',
+            '--single-process',
+        ])
         page = await browser.newPage()
         await page.setUserAgent(self.headers['User-Agent'])
         await page.goto(url, {"timeout": 60000})
@@ -206,23 +212,6 @@ class WebScraper:
         return data_dict_list
 
 
-def export_data(news_dict_list, data_stats, t1, t2, num_cores):
-    df = pd.DataFrame(news_dict_list)
-    df.to_csv(f"data/news_data.csv", sep="\t", index=False)
-
-    with open(f"data/news_data_stats.csv", "w") as f:
-        f.write(f"Start Time :{t1.strftime('%Y-%m-%d %H:%M')}\n")
-        f.write(f"End Time :{t2.strftime('%Y-%m-%d %H:%M')}\n")
-        f.write(f"Num cores : {num_cores}\n")
-        f.write(f"Time Spent : {t2-t1:.4f} s\n")
-        f.write(f"Total Articles : {len(news_dict_list)}\n")
-        f.write("\n============================\n")
-        for k, v in data_stats.items():
-            f.write(f"{k}: {v}\n")
-
-    logger.info("Export data files success!!!")
-
-
 def format_job_log_data(news_dict_list, data_stats, dt1, dt2, num_cores):
     job_log_data = {
         "start_time": dt1.strftime('%Y-%m-%d %H:%M'),
@@ -285,10 +274,9 @@ def main(num_cores = 1):
     dt1 = datetime.now()
 
     configs_ = add_existing_urls_to_config(configs)
-    results = Parallel(n_jobs=num_cores)(delayed(scrape_one)(config) for config in configs_)
-
-    for config, data_dict_list in zip(configs_, results):
+    for config in configs_:
         logger.info(f"************   {config['name']}   ************")
+        data_dict_list = scrape_one(config)
         data_stats[config['name']] = len(data_dict_list)
         news_dict_list += data_dict_list
 
@@ -297,64 +285,7 @@ def main(num_cores = 1):
     job_log_data = format_job_log_data(news_dict_list, data_stats, dt1, dt2, num_cores)
     save_job_log_to_db(job_log_data)
     save_data_to_db(news_dict_list)
-    # export_data(news_dict_list, data_stats, t1, t2, num_cores)
     print(f"Total time spent: {t2-t1:.4f} s")
-
-
-def test():
-    url = "https://news.rthk.hk/rthk/ch/component/k2/1754367-20240523.htm"
-
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
-    }
-
-    config = {
-        "name": "rthk-zh",
-        "base_url": "https://news.rthk.hk/",
-        "language": "zh",
-        "target_categories": ["rthk/ch/latest-news/local.htm", "rthk/ch/latest-news/greater-china.htm",
-                              "rthk/ch/latest-news/world-news.htm", "rthk/ch/latest-news/finance.htm"],
-        "news_card_identifier": "div.ns2-page",
-        "headline_identifier": "h2.itemTitle",
-        "datetime_identifier": "div.createddate",
-        "content_identifier": "div.itemBody",
-        "is_debug": True
-    }
-
-    def fetch_content_in_news(self, url):
-        headline_identifier = self["headline_identifier"]
-        datetime_identifier = self["datetime_identifier"]
-        content_identifier = self["content_identifier"]
-
-        with requests.get(url, headers=headers) as r:
-            soup = BeautifulSoup(r.content, "lxml")
-            if self["is_debug"]:
-                print("Status code :", r.status_code, "| url :", url)
-
-        scrape_time = datetime.now()
-        news_datetime = soup.select_one(datetime_identifier)
-        if news_datetime:
-            news_datetime = news_datetime.get("datetime", news_datetime.text.strip())
-
-        # Use re.sub to replace multiple spaces with a single space
-        content = soup.select_one(content_identifier).text.strip()
-        content = re.sub(r'\s+', ' ', content)
-
-        data_dict = {
-            "platform": self["name"],
-            "language": self["language"],
-            "headline": soup.select_one(headline_identifier).text.strip(),
-            "datetime": news_datetime,
-            "scrapetime": scrape_time.strftime("%Y%m%d %H:%M"),
-            "url": url,
-            "content": content
-        }
-
-        print(data_dict)
-
-        return data_dict
-
-    fetch_content_in_news(config, url)
 
 
 logger = get_logger(is_file=False, is_console=True)
@@ -368,4 +299,4 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    main(num_cores=args.num_core)
+    main()

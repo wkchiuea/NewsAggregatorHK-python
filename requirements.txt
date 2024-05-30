@@ -1,8 +1,9 @@
-requests_html
+requests
+urllib3
 pyppeteer
 joblib
-pandas
 beautifulsoup4
+lxml
 pymongo
 Flask
 Flask-Restful

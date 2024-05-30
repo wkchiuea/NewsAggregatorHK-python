@@ -1,15 +1,48 @@
 #!/bin/bash
 # This script is intended to be used as user data for an AWS EC2 instance.
 
-# Update and install necessary packages
+# Update the package list and install necessary packages
 sudo yum update -y
 sudo yum install -y tzdata
 sudo yum install -y git
-sudo yum install -y python3
+
+sudo yum install -y \
+    alsa-lib \
+    atk \
+    cups-libs \
+    dbus-glib \
+    GConf2 \
+    gtk3 \
+    libXcomposite \
+    libXcursor \
+    libXdamage \
+    libXext \
+    libXi \
+    libXrandr \
+    libXScrnSaver \
+    libXtst \
+    pango \
+    xorg-x11-fonts-Type1 \
+    xorg-x11-fonts-misc
+
+sudo amazon-linux-extras install epel -y
+sudo yum install -y chromium
+
+# Enable and install Python 3.8 and pip
+sudo amazon-linux-extras enable python3.8
+sudo yum install -y python3.8
 sudo yum install -y python3-pip
 
+# Update the default python3 symlink to point to python3.8
+sudo alternatives --install /usr/bin/python3 python3 /usr/bin/python3.7 1
+sudo alternatives --install /usr/bin/python3 python3 /usr/bin/python3.8 2
+sudo alternatives --set python3 /usr/bin/python3.8
+
+# Verify the Python version
+python3 --version
+
 # Set Timezone
-timedatectl set-timezone Asia/Hong_Kong
+sudo timedatectl set-timezone Asia/Hong_Kong
 
 # Clone the repository from GitHub
 git clone https://github.com/wkchiuea/NewsAggregatorHK-python.git /home/ec2-user/myrepo
@@ -31,13 +64,14 @@ gpgkey=https://www.mongodb.org/static/pgp/server-4.4.asc
 EOF
 
 sudo yum install -y mongodb-org
+sudo yum install -y mongodb-mongosh
 
 # Start MongoDB service
 sudo systemctl start mongod
 sudo systemctl enable mongod
 
 # Create MongoDB collections
-mongo <<EOF
+mongosh <<EOF
 use raw_news;
 db.createCollection("news_data");
 db.createCollection("comments");
