@@ -289,7 +289,7 @@ def main(num_cores = 1):
     print(f"Total time spent: {t2-t1:.4f} s")
 
 
-logger = get_logger(is_file=True, is_console=False)
+logger = get_logger(is_file=False, is_console=True)
 
 
 if __name__ == '__main__':

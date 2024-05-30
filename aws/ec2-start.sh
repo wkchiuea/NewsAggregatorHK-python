@@ -82,8 +82,7 @@ EOF
 
 # Set up a cron job to run the scripts every hour
 # Add the cron job to the crontab
-echo "0 * * * * /usr/bin/python3 /home/ec2-user/myrepo/web-scraping/web_scraping_v2.py" | sudo crontab -
-#echo "0 * * * * /usr/bin/python3 /home/ec2-user/myrepo/web-scraping/web_scraping_v2.py >> /home/ec2-user/myrepo/web-scraping/web_scraping_v2.log 2>&1" | sudo crontab -u ec2-user -
+echo "0 * * * * /usr/bin/python3 /home/ec2-user/myrepo/web-scraping/web_scraping_v2.py >> /home/ec2-user/myrepo/web-scraping/web_scraping_v2.log 2>&1" | sudo crontab -
 
 # Create the logrotate configuration for the log file
 cat <<EOF > /etc/logrotate.d/web_scraping_v2
