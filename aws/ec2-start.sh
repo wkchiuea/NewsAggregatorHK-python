@@ -82,9 +82,8 @@ EOF
 
 # Set up a cron job to run the scripts every hour
 # Add the cron job to the crontab
-echo "0 * * * * /usr/bin/python3 /home/ec2-user/myrepo/web-scraping/web_scraping_v2.py" | sudo crontab -u ec2-user -
+echo "0 * * * * /usr/bin/python3 /home/ec2-user/myrepo/web-scraping/web_scraping_v2.py" | sudo crontab -
 #echo "0 * * * * /usr/bin/python3 /home/ec2-user/myrepo/web-scraping/web_scraping_v2.py >> /home/ec2-user/myrepo/web-scraping/web_scraping_v2.log 2>&1" | sudo crontab -u ec2-user -
-#(crontab -l 2>/dev/null; echo "30 * * * * /home/ec2-user/myrepo/venv/bin/python /home/ec2-user/myrepo/web-scraping/fb_comment.py 25 --comments_limit 50") | crontab -
 
 # Create the logrotate configuration for the log file
 cat <<EOF > /etc/logrotate.d/web_scraping_v2
@@ -94,7 +93,7 @@ cat <<EOF > /etc/logrotate.d/web_scraping_v2
     compress
     missingok
     notifempty
-    create 0644 ec2-user ec2-user
+    create 0644 root root
     postrotate
         /usr/bin/systemctl reload crond > /dev/null 2>&1 || true
     endscript
