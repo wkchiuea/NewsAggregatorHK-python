@@ -1,5 +1,4 @@
 from apify_client import ApifyClient
-import pandas as pd
 import re
 import os
 import argparse
@@ -66,11 +65,10 @@ def get_comments(client, results_limit=25, comments_limit=50):
     # Run the Actor and wait for it to finish
     run_get_comments = client.actor(fb_comments_scraper_id).call(run_input=input_get_comments)
 
-    # Fetch Actor results from the run's dataset and create a DataFrame
+    # Fetch Actor results from the run's dataset
     items = list(client.dataset(run_get_comments["defaultDatasetId"]).iterate_items())
-    df = pd.DataFrame(items)
 
-    return df
+    return items
 
 
 def extract_and_expand_bityl_link(post_title):
@@ -128,24 +126,35 @@ def main(args):
     print(f"Posts Limit : {results_limit} \n Comments Limit : {comments_limit}")
 
     client = get_api_client()
-    df = get_comments(client, results_limit, comments_limit)
+    comments = get_comments(client, results_limit, comments_limit)
 
-    # Add a new column with expanded news urls and filter targetUrl to preserve only those in news_data
-    df["targetUrl"] = df["postTitle"].apply(extract_and_expand_bityl_link)
+    # Add a new expanded news URLs and filter targetUrl to preserve only those in news_data
+    for comment in comments:
+        comment["targetUrl"] = extract_and_expand_bityl_link(comment["postTitle"])
+
     existing_urls = get_urls_from_db(platform="hk01")
-    df = df[df["targetUrl"].isin(existing_urls)]
+    comments = [c for c in comments if c["targetUrl"] in existing_urls]
 
-    # with targetUrl, only get those comments not in db
-    df["commentId"] = df["commentUrl"].apply(lambda url: url.split('?')[1].split('=')[1])
+    # With targetUrl, only get those comments not in db
+    for comment in comments:
+        comment["commentId"] = comment["commentUrl"].split('?')[1].split('=')[1]
+
     existing_comments = get_comments_from_db(platform="hk01")
-    df = df[~df.apply(lambda row: (row["targetUrl"], row["commentId"]) in existing_comments, axis=1)]
+    comments = [c for c in comments if (c["targetUrl"], c["commentId"]) not in existing_comments]
 
-    # Create a new df with certain columns
-    df = df[['date', 'text', 'postTitle', 'targetUrl', 'commentId']]
-    df['platform'] = 'hk01'
+    # Create a new list with certain fields
+    results = [
+        {
+            'date': c['date'],
+            'text': c['text'],
+            'postTitle': c['postTitle'],
+            'targetUrl': c['targetUrl'],
+            'commentId': c['commentId'],
+            'platform': 'hk01'
+        }
+        for c in comments
+    ]
 
-    # Transform the df to a list of dicts
-    results = df.to_dict(orient='records')
     insert_comments_to_db(results)
 
     print("Comments Scraping Completed!!!")

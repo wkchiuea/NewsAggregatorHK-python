@@ -1,9 +1,9 @@
 requests
-urllib3==1.26
-pyppeteer==2.1.1
+urllib3
+pyppeteer
 joblib
-pandas
 beautifulsoup4
+lxml
 pymongo
 Flask
 Flask-Restful
