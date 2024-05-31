@@ -46,7 +46,7 @@ python3 --version
 sudo timedatectl set-timezone Asia/Hong_Kong
 
 # Clone the repository from GitHub
-git clone https://github.com/wkchiuea/NewsAggregatorHK-python.git /home/ec2-user/myrepo
+git clone -b release/aws-deploy https://github.com/wkchiuea/NewsAggregatorHK-python.git /home/ec2-user/myrepo
 
 # Navigate to the repository directory
 cd /home/ec2-user/myrepo
