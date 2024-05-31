@@ -11,3 +11,4 @@ Flask-JWT
 Flask-SQLAlchemy
 pyautogen
 apify-client
+waitress
