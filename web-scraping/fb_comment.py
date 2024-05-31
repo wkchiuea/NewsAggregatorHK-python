@@ -38,6 +38,7 @@ def get_actors(client):
 
 
 def get_comments(client, results_limit=25, comments_limit=50):
+    print("Getting comments urls from facebook...")
     fb_posts_scraper_id, fb_comments_scraper_id = get_actors(client)
 
     # Get last 25 posts from HK01
@@ -54,7 +55,7 @@ def get_comments(client, results_limit=25, comments_limit=50):
         if "01新聞" in item.get("text", ""):
             output_urls.append({"url": item["url"]})
 
-
+    print("Getting comments...")
     # Prepare the Actor input
     input_get_comments = {
         "startUrls": output_urls,
