@@ -66,7 +66,7 @@ def get_actors(client):
 
 
 def get_comments(client, results_limit=25, comments_limit=50):
-    print("Getting comments urls from facebook...")
+    logger.info("Getting comments urls from facebook...")
     fb_posts_scraper_id, fb_comments_scraper_id = get_actors(client)
 
     # Get last 25 posts from HK01
@@ -83,7 +83,7 @@ def get_comments(client, results_limit=25, comments_limit=50):
         if "01新聞" in item.get("text", ""):
             output_urls.append({"url": item["url"]})
 
-    print("Getting comments...")
+    logger.info("Getting comments...")
     # Prepare the Actor input
     input_get_comments = {
         "startUrls": output_urls,
@@ -116,7 +116,7 @@ def extract_and_expand_bityl_link(post_title):
 
 
 def get_urls_from_db(platform='hk01'):
-    print("Start getting urls from news_data collection...")
+    logger.info("Start getting urls from news_data collection...")
     try:
         existing_urls = news_data_collection.find(
             {"platform": platform},
@@ -128,7 +128,7 @@ def get_urls_from_db(platform='hk01'):
 
 
 def get_comments_from_db(platform='hk01'):
-    print("Start getting urls from comments collection...")
+    logger.info("Start getting urls from comments collection...")
     try:
         existing_comments = comments_collection.find(
             {"platform": platform},
@@ -140,19 +140,19 @@ def get_comments_from_db(platform='hk01'):
 
 
 def insert_comments_to_db(comments):
-    print("Start inserting to comments collection...")
+    logger.info("Start inserting to comments collection...")
     try:
         result = comments_collection.insert_many(comments)
-        print(f"Inserted IDs: {result.inserted_ids}")
+        logger.info(f"Inserted IDs: {result.inserted_ids}")
     except Exception as e:
-        print(e)
+        logger.info(e)
 
 
 def main(args):
     results_limit = args.results_limit if args is not None else 25
     comments_limit = args.comments_limit if args is not None else 50
-    print("Starting Facebook comments scraping...")
-    print(f"Posts Limit : {results_limit} \n Comments Limit : {comments_limit}")
+    logger.info("Starting Facebook comments scraping...")
+    logger.info(f"Posts Limit : {results_limit} \n Comments Limit : {comments_limit}")
 
     client = get_api_client()
     comments = get_comments(client, results_limit, comments_limit)
@@ -186,7 +186,7 @@ def main(args):
 
     insert_comments_to_db(results)
 
-    print("Comments Scraping Completed!!!")
+    logger.info("Comments Scraping Completed!!!")
 
 
 logger = get_logger(is_file=False, is_console=True)
