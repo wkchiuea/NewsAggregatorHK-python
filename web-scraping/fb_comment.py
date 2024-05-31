@@ -15,7 +15,7 @@ job_log_collection = db['job_log']
 
 
 def get_api_client():
-    APIFY_API_KEY = os.getenv('APIFY_API_TOKEN')
+    APIFY_API_KEY = os.getenv('APIFY_API_KEY')
     if APIFY_API_KEY is None:
         raise ValueError('API_TOKEN environment variable not set')
 
