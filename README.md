@@ -33,6 +33,14 @@ MongoDB
 - `db.[COLLECTION_NAME].find()`
 - `db.job_log.find()`
   
+MongoDB Export Import Data
+- Export
+  - `mongodump --db raw_news --out /home/ec2-user/mongodump/`
+  - `scp -i XXXX.pem -r ec2-user@AAAAAAAA:/home/ec2-user/mongodump/ ~/Downloads/mongodump/`
+- Import
+  - `scp -i XXXX.pem -r ~/Downloads/mongodump/ ec2-user@AAAAAAAA:/home/ec2-user/mongodump/`
+  - `mongorestore --db raw_news /home/ec2-user/mongodump/raw_news`
+  
 Logs
 - `tail ~/myrepo/web-scraping/web_scraping_v2.log`
 - `tail ~/myrepo/web-scraping/fb_comment.log`
@@ -42,8 +50,8 @@ Test Service
 - `curl -G "http://127.0.0.1:5000/news`
 - ` 
 curl -G "http://127.0.0.1:5000/news"
-     --data-urlencode "after_datetime=2024-05-31 11:00"  
-     --data-urlencode "platform=hk01"
+     --data-urlencode "after_datetime=2024-05-31 14:00"  
+     --data-urlencode "platform=now"
 `
   
 Cron Job
