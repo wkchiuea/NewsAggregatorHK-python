@@ -293,4 +293,9 @@ logger = get_logger(is_file=False, is_console=True)
 
 
 if __name__ == '__main__':
+    t = datetime.now().strftime('%Y-%m-%d %H:%M')
+    logger.info("***************************************************")
+    logger.info(f"************** {t} *******************")
+    logger.info("***************************************************")
+
     main()
