@@ -32,7 +32,7 @@ def get_logger(is_file=False, is_console=False):
 
     if is_file:
         # Create a file handler for output file
-        file_handler = logging.FileHandler('app.log')
+        file_handler = logging.FileHandler('web_scraping_v2.log')
         file_handler.setLevel(logging.DEBUG)
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)

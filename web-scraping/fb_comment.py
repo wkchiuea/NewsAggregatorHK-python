@@ -1,4 +1,5 @@
 from apify_client import ApifyClient
+import logging
 import re
 import os
 import argparse
@@ -12,6 +13,33 @@ db = mongo_client['raw_news']
 news_data_collection = db['news_data']
 comments_collection = db['comments']
 job_log_collection = db['job_log']
+
+
+def get_logger(is_file=False, is_console=False):
+
+    # Create a logger
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.DEBUG)  # Set the minimum log level
+
+    # Create a formatter and set it for both handlers
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s',
+                                  datefmt='%Y-%m-%d %H:%M:%S')
+
+    if is_file:
+        # Create a file handler for output file
+        file_handler = logging.FileHandler('fb_comment.log')
+        file_handler.setLevel(logging.DEBUG)
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+
+    if is_console:
+        # Create a console handler for output to console
+        console_handler = logging.StreamHandler()
+        console_handler.setLevel(logging.DEBUG)
+        console_handler.setFormatter(formatter)
+        logger.addHandler(console_handler)
+
+    return logger
 
 
 def get_api_client():
@@ -161,6 +189,9 @@ def main(args):
     print("Comments Scraping Completed!!!")
 
 
+logger = get_logger(is_file=False, is_console=True)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Limit the scraping results")
     parser.add_argument('results_limit', type=int, nargs='?', default=25,
@@ -170,7 +201,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     main(args)
-
-# python fb_comment.py 25 --comments_limit 50
-
 
