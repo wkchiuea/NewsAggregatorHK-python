@@ -82,6 +82,7 @@ EOF
 
 # Set up API token
 ##### export APIFY_API_TOKEN="haha"
+##### export FLASK_SECRET="haha"
 
 # Set up a cron job to run the scrape.py script every hour
 # Add the cron job to the crontab
@@ -128,5 +129,26 @@ EOF
 chown root:root /etc/logrotate.d/fb_comment
 chmod 644 /etc/logrotate.d/fb_comment
 
+# flask/app.py
+# Create the logrotate configuration for the log file
+cat <<EOF > /etc/logrotate.d/flask_app
+/home/ec2-user/myrepo/flask/flask_app.log {
+    daily
+    rotate 7
+    compress
+    missingok
+    notifempty
+    create 0644 root root
+    postrotate
+        /usr/bin/systemctl reload crond > /dev/null 2>&1 || true
+    endscript
+}
+EOF
+
+# Ensure correct permissions for the logrotate configuration
+chown root:root /etc/logrotate.d/flask_app
+chmod 644 /etc/logrotate.d/flask_app
+
 # Print a message indicating that the setup is complete
 echo "Setup complete. The web_scraping_v2.py script will run every hour."
+echo "***** All setup complete"
