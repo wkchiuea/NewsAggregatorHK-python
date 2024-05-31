@@ -70,8 +70,6 @@ class WebScraper:
         self.target_categories = config.get("target_categories", [])
         self.categories = config.get("categories", [])
 
-        self.existing_urls = config.get("existing_urls", set())
-
         self.num_scroll = config.get("num_scroll", 2)
         self.news_card_identifier = config.get("news_card_identifier", "")
         self.headline_identifier = config.get("headline_identifier", "")
@@ -193,7 +191,8 @@ class WebScraper:
             news_urls = []
             try:
                 news_urls = self.fetch_links_in_category(category_url)
-                news_urls = self._remove_existing_urls(news_urls, self.existing_urls)
+                existing_urls = get_urls_from_db(self.name)
+                news_urls = self._remove_existing_urls(news_urls, existing_urls)
             except Exception as e:
                 logger.error(e)
 
@@ -207,7 +206,7 @@ class WebScraper:
         return data_dict_list
 
 
-def format_job_log_data(news_dict_list, data_stats, dt1, dt2, num_cores):
+def format_job_log_data(total_articles, data_stats, dt1, dt2, num_cores):
     t_seconds = (dt2 - dt1).total_seconds()
     t_minutes = t_seconds / 60
 
@@ -216,7 +215,7 @@ def format_job_log_data(news_dict_list, data_stats, dt1, dt2, num_cores):
         "end_time": dt2.strftime('%Y-%m-%d %H:%M'),
         "num_cores": num_cores,
         "time_spent": f"{t_seconds:.2f} s ({t_minutes:.2f} mins)",
-        "total_articles": len(news_dict_list),
+        "total_articles": total_articles,
         "data_stats": data_stats
     }
     return job_log_data
@@ -252,12 +251,6 @@ def get_urls_from_db(platform):
         return set()
 
 
-def add_existing_urls_to_config(_configs):
-    for config in _configs:
-        config['existing_urls'] = get_urls_from_db(config['name'])
-    return _configs
-
-
 def scrape_one(config):
     webscraper = WebScraper(config)
     data_dict_list = webscraper.start_scraping()
@@ -270,22 +263,22 @@ def scrape_one(config):
 
 def main(num_cores=1):
     data_stats = {}
-    news_dict_list = []
+    total_articles = 0
     t1 = time()
     dt1 = datetime.now()
 
-    configs_ = add_existing_urls_to_config(configs)
-    for config in configs_:
+    for config in configs:
         logger.info(f"************************   Start Fetching {config['name']}   ************************")
         data_dict_list = scrape_one(config)
         data_stats[config['name']] = len(data_dict_list)
-        news_dict_list += data_dict_list
+        total_articles += len(data_dict_list)
+        save_data_to_db(data_dict_list)
+        data_dict_list = [] # clean the items in list to reduce memory requirement
 
     t2 = time()
     dt2 = datetime.now()
-    job_log_data = format_job_log_data(news_dict_list, data_stats, dt1, dt2, num_cores)
+    job_log_data = format_job_log_data(total_articles, data_stats, dt1, dt2, num_cores)
     save_job_log_to_db(job_log_data)
-    save_data_to_db(news_dict_list)
     logger.info(f"Total time spent: {t2-t1:.4f} s")
 
 
