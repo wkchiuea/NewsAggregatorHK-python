@@ -17,8 +17,31 @@ comments_collection = db['comments']
 job_log_collection = db['job_log']
 
 
-logging.basicConfig(filename='flask_app.log', level=logging.INFO)
-logger = logging.getLogger(__name__)
+def get_logger(is_file=False, is_console=False):
+
+    # Create a logger
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.DEBUG)  # Set the minimum log level
+
+    # Create a formatter and set it for both handlers
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s',
+                                  datefmt='%Y-%m-%d %H:%M:%S')
+
+    if is_file:
+        # Create a file handler for output file
+        file_handler = logging.FileHandler('flask_app.log')
+        file_handler.setLevel(logging.DEBUG)
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+
+    if is_console:
+        # Create a console handler for output to console
+        console_handler = logging.StreamHandler()
+        console_handler.setLevel(logging.DEBUG)
+        console_handler.setFormatter(formatter)
+        logger.addHandler(console_handler)
+
+    return logger
 
 
 class NewsResource(Resource):
@@ -87,5 +110,8 @@ api.add_resource(NewsResource, '/news')
 api.add_resource(CommentsResource, '/comments')
 
 
+logger = get_logger(is_file=False, is_console=True)
+
+
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(debug=True, host='0.0.0.0', port=5000)

@@ -1,4 +1,3 @@
-import argparse
 import logging
 import re
 import requests
@@ -10,8 +9,6 @@ from time import time
 from datetime import datetime
 
 from config_file import configs
-
-
 
 
 client = MongoClient('mongodb://localhost:27017/')
@@ -32,7 +29,7 @@ def get_logger(is_file=False, is_console=False):
 
     if is_file:
         # Create a file handler for output file
-        file_handler = logging.FileHandler('app.log')
+        file_handler = logging.FileHandler('web_scraping_v2.log')
         file_handler.setLevel(logging.DEBUG)
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
@@ -88,8 +85,7 @@ class WebScraper:
 
         with requests.get(url, headers=self.headers) as r:
             soup = BeautifulSoup(r.content, "lxml")
-            if self.is_debug:
-                print("status code :", r.status_code)
+            logger.info("status code :", r.status_code)
 
         content = asyncio.get_event_loop().run_until_complete(self.scroll_and_scrape(url, num_scroll=self.num_scroll))
         soup = BeautifulSoup(content, "lxml")
@@ -108,8 +104,9 @@ class WebScraper:
 
         with requests.get(url, headers=self.headers) as r:
             soup = BeautifulSoup(r.content, "lxml")
-            if self.is_debug:
-                print("Status code :", r.status_code, "| url :", url)
+            # if self.is_debug:
+            #     logger.info("Fetching " + url)
+            #     print("Status code :", r.status_code, "| url :", url)
 
         scrape_time = datetime.now()
         news_datetime = soup.select_one(datetime_identifier)
@@ -137,7 +134,7 @@ class WebScraper:
 
         return data_dict
 
-    async def scroll_and_scrape(self, url, num_scroll=3):
+    async def scroll_and_scrape(self, url, num_scroll=2):
         browser = await launch(headless=True, args=[
             '--no-sandbox',
             '--disable-setuid-sandbox',
@@ -199,12 +196,10 @@ class WebScraper:
                 news_urls = self._remove_existing_urls(news_urls, self.existing_urls)
             except Exception as e:
                 logger.error(e)
-            logger.info("Total news links : " + f"{len(news_urls)}")
 
-            logger.info("Fetching each news content ...")
+            logger.info(f"Fetching each news content ... for Total {len(news_urls)} links ...")
             for news_url in news_urls:
                 try:
-                    logger.info("Fetching " + news_url)
                     data_dict_list.append(self.fetch_content_in_news(news_url, category))
                 except Exception as e:
                     logger.error(e)
@@ -213,11 +208,14 @@ class WebScraper:
 
 
 def format_job_log_data(news_dict_list, data_stats, dt1, dt2, num_cores):
+    t_seconds = (dt2 - dt1).total_seconds()
+    t_minutes = t_seconds / 60
+
     job_log_data = {
         "start_time": dt1.strftime('%Y-%m-%d %H:%M'),
         "end_time": dt2.strftime('%Y-%m-%d %H:%M'),
         "num_cores": num_cores,
-        "time_spent": (dt2 - dt1).total_seconds(),
+        "time_spent": f"{t_seconds:.2f} s ({t_minutes:.2f} mins)",
         "total_articles": len(news_dict_list),
         "data_stats": data_stats
     }
@@ -228,14 +226,16 @@ def save_job_log_to_db(job_log_data):
     try:
         job_log_collection.insert_one(job_log_data)
     except Exception as e:
+        logger.error("Error saving job log to db")
         logger.error(e)
 
 
 def save_data_to_db(news_dict_list):
     try:
         result = news_data_collection.insert_many(news_dict_list)
-        print(f"Inserted IDs: {result.inserted_ids}")
+        logger.info(f"Inserted IDs: {result.inserted_ids}")
     except Exception as e:
+        logger.error("Error saving news data to db")
         logger.error(e)
 
 
@@ -247,7 +247,8 @@ def get_urls_from_db(platform):
         )
         return {doc['url'] for doc in existing_urls}
     except Exception as e:
-        logging.error(e)
+        logger.error("Error getting existing urls from db")
+        logger.error(e)
         return set()
 
 
@@ -261,13 +262,13 @@ def scrape_one(config):
     webscraper = WebScraper(config)
     data_dict_list = webscraper.start_scraping()
     if len(data_dict_list) == 0:
-        logger.info(f"************   {config['name']} fail to fetch data")
+        logger.info(f"************   {config['name']} fail to fetch data, len(data_dict_list) == 0")
         return []
 
     return data_dict_list
 
 
-def main(num_cores = 1):
+def main(num_cores=1):
     data_stats = {}
     news_dict_list = []
     t1 = time()
@@ -275,7 +276,7 @@ def main(num_cores = 1):
 
     configs_ = add_existing_urls_to_config(configs)
     for config in configs_:
-        logger.info(f"************   {config['name']}   ************")
+        logger.info(f"************************   Start Fetching {config['name']}   ************************")
         data_dict_list = scrape_one(config)
         data_stats[config['name']] = len(data_dict_list)
         news_dict_list += data_dict_list
@@ -285,18 +286,16 @@ def main(num_cores = 1):
     job_log_data = format_job_log_data(news_dict_list, data_stats, dt1, dt2, num_cores)
     save_job_log_to_db(job_log_data)
     save_data_to_db(news_dict_list)
-    print(f"Total time spent: {t2-t1:.4f} s")
+    logger.info(f"Total time spent: {t2-t1:.4f} s")
 
 
 logger = get_logger(is_file=False, is_console=True)
 
 
 if __name__ == '__main__':
-    # Parse command-line arguments
-    parser = argparse.ArgumentParser(description="Run the web scraping script with specified number of cores.")
-    parser.add_argument('num_core', type=int, nargs='?', default=1,
-                        help='Number of cores to use for parallel processing (default: 1)')
-
-    args = parser.parse_args()
+    t = datetime.now().strftime('%Y-%m-%d %H:%M')
+    logger.info("***************************************************")
+    logger.info(f"************** {t} *******************")
+    logger.info("***************************************************")
 
     main()

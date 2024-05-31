@@ -151,4 +151,12 @@ chmod 644 /etc/logrotate.d/flask_app
 
 # Print a message indicating that the setup is complete
 echo "Setup complete. The web_scraping_v2.py script will run every hour."
+
+# Start Server
+cd /home/ec2-user/myrepo/flask
+sudo touch /home/ec2-user/myrepo/flask/flask_app.log
+sudo chown root:root /home/ec2-user/myrepo/flask/flask_app.log
+sudo nohup /usr/bin/waitress-serve --listen=0.0.0.0:5000 app:app >> /home/ec2-user/myrepo/flask/flask_app.log 2>&1 &
+echo "*** Server started successfully"
+
 echo "***** All setup complete"
