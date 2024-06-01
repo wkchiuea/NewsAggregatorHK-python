@@ -144,7 +144,7 @@ class WebScraper:
         ])
         page = await browser.newPage()
         await page.setUserAgent(self.headers['User-Agent'])
-        await page.goto(url, {"timeout": 30000})
+        await page.goto(url, {"timeout": 60000})
 
         # Scroll down the page
         for _ in range(num_scroll):
