@@ -22,7 +22,7 @@ Flask Service
   
 ## Post Deployment
 1. Check Cloud init log  
-`sudo cat /var/log/cloud-init-log.log`  
+`sudo cat /var/log/cloud-init-output.log`  
 2. Check Crontab  
 `sudo crontab -l`  
 

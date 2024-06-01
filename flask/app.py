@@ -44,6 +44,24 @@ def get_logger(is_file=False, is_console=False):
     return logger
 
 
+@app.before_request
+def log_request_info():
+    request.start_time = datetime.now()
+    logger.info(f"Request: {request.method} {request.url}")
+    logger.debug(f"Request headers: {request.headers}")
+    logger.debug(f"Request body: {request.get_data()}")
+
+
+@app.after_request
+def log_response_info(response):
+    duration = datetime.now() - request.start_time
+    logger.info(f"Response status: {response.status}")
+    logger.info(f"Request took {duration.total_seconds():.4f} seconds")
+    logger.debug(f"Response headers: {response.headers}")
+    # logger.debug(f"Response body: {response.get_data()}")
+    return response
+
+
 class NewsResource(Resource):
     def get(self):
         """
