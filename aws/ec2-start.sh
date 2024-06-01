@@ -156,7 +156,27 @@ echo "Setup complete. The web_scraping_v2.py script will run every hour."
 cd /home/ec2-user/myrepo/flask
 sudo touch /home/ec2-user/myrepo/flask/flask_app.log
 sudo chown root:root /home/ec2-user/myrepo/flask/flask_app.log
-sudo nohup /usr/local/bin/waitress-serve --listen=0.0.0.0:5000 app:app >> /home/ec2-user/myrepo/flask/flask_app.log 2>&1 &
+# Create systemd service file
+sudo bash -c 'cat <<EOF > /etc/systemd/system/flask-app.service
+[Unit]
+Description=Flask App using Waitress
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/waitress-serve --listen=0.0.0.0:5000 app:app
+WorkingDirectory=/home/ec2-user/myrepo/flask
+StandardOutput=append:/home/ec2-user/myrepo/flask/flask_app.log
+StandardError=append:/home/ec2-user/myrepo/flask/flask_app.log
+Restart=always
+User=root
+
+[Install]
+WantedBy=multi-user.target
+EOF'
+# Enable and start the service
+sudo systemctl enable flask-app.service
+sudo systemctl start flask-app.service
+
 echo "*** Server started successfully"
 
 echo "***** All setup complete"
