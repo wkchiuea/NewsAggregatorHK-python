@@ -83,7 +83,7 @@ class WebScraper:
 
         with requests.get(url, headers=self.headers) as r:
             soup = BeautifulSoup(r.content, "lxml")
-            logger.info("status code :", r.status_code)
+            logger.info(f"status code : {r.status_code}")
 
         content = asyncio.get_event_loop().run_until_complete(self.scroll_and_scrape(url, num_scroll=self.num_scroll))
         soup = BeautifulSoup(content, "lxml")
