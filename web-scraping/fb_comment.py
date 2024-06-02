@@ -174,17 +174,18 @@ def main(args):
     comments = [c for c in comments if (c["targetUrl"], c["commentId"]) not in existing_comments]
 
     # Create a new list with certain fields
-    results = [
-        {
+    results = []
+    for c in comments:
+        if 'text' not in c.keys():
+            continue
+        results.append({
             'date': c['date'],
             'text': c['text'],
             'postTitle': c['postTitle'],
             'targetUrl': c['targetUrl'],
             'commentId': c['commentId'],
             'platform': 'hk01'
-        }
-        for c in comments
-    ]
+        })
 
     insert_comments_to_db(results)
 
