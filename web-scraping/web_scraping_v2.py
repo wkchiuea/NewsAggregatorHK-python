@@ -217,7 +217,9 @@ class WebScraper:
         data_dict_list = []
         for news_url, category in news_urls_categories:
             try:
-                data_dict_list.append(self.fetch_content_in_news(news_url, category))
+                data_dict = self.fetch_content_in_news(news_url, category)
+                if data_dict is not None:
+                    data_dict_list.append(data_dict)
             except Exception as e:
                 logger.error(e)
 
