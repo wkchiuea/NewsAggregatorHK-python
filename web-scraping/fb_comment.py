@@ -94,6 +94,8 @@ def get_comments(client, results_limit=25, comments_limit=50):
     # Run the Actor and wait for it to finish
     run_get_comments = client.actor(fb_comments_scraper_id).call(run_input=input_get_comments)
 
+    logger.info("Successfully fetch comments !!!")
+
     # Fetch Actor results from the run's dataset
     items = list(client.dataset(run_get_comments["defaultDatasetId"]).iterate_items())
 
