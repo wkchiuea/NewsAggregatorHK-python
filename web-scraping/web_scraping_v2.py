@@ -81,10 +81,6 @@ class WebScraper:
     def fetch_links_in_category(self, url):
         news_card_identifier = self.news_card_identifier
 
-        with requests.get(url, headers=self.headers) as r:
-            soup = BeautifulSoup(r.content, "lxml")
-            logger.info(f"status code : {r.status_code}")
-
         content = asyncio.get_event_loop().run_until_complete(self.scroll_and_scrape(url, num_scroll=self.num_scroll))
         soup = BeautifulSoup(content, "lxml")
 
@@ -102,18 +98,17 @@ class WebScraper:
 
         with requests.get(url, headers=self.headers) as r:
             soup = BeautifulSoup(r.content, "lxml")
-            # if self.is_debug:
-            #     logger.info("Fetching " + url)
-            #     print("Status code :", r.status_code, "| url :", url)
+
+        # Use re.sub to replace multiple spaces with a single space
+        content = soup.select_one(content_identifier)
+        if content is None or len(content.text.strip()) == 0:
+            return None
+        content = re.sub(r'\s+', ' ', content.text.strip())
 
         scrape_time = datetime.now()
         news_datetime = soup.select_one(datetime_identifier)
         if news_datetime:
             news_datetime = news_datetime.get("datetime", news_datetime.text.strip())
-
-        # Use re.sub to replace multiple spaces with a single space
-        content = soup.select_one(content_identifier).text.strip()
-        content = re.sub(r'\s+', ' ', content)
 
         headline = soup.select_one(headline_identifier).text.strip()
 
@@ -132,32 +127,6 @@ class WebScraper:
 
         return data_dict
 
-    async def scroll_and_scrape(self, url, num_scroll=2):
-        browser = await launch(headless=True, args=[
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-accelerated-2d-canvas',
-            '--disable-gpu',
-            '--no-zygote',
-            '--single-process',
-        ])
-        page = await browser.newPage()
-        await page.setUserAgent(self.headers['User-Agent'])
-        await page.goto(url, {"timeout": 30000})
-
-        # Scroll down the page
-        for _ in range(num_scroll):
-            await page.evaluate('window.scrollTo(0, document.body.scrollHeight);')
-            await asyncio.sleep(2)  # Wait for content to load
-
-        # Scrape the content
-        content = await page.content()
-
-        await browser.close()
-
-        return content
-
     def format_urls_to_absolute_urls(self, urls):
         base_url = self.base_url
 
@@ -172,8 +141,56 @@ class WebScraper:
 
         return abs_urls
 
+    async def scroll_and_scrape(self, url, num_scroll=2, timeout=30000):
+        browser = None
+        try:
+            browser = await launch(headless=True, args=[
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage',
+                '--disable-accelerated-2d-canvas',
+                '--disable-gpu',
+                '--no-zygote',
+                '--single-process',
+            ])
+            page = await browser.newPage()
+            await page.setUserAgent(self.headers['User-Agent'])
+
+            logger.info(f"[Async scroll_and_scrpae] Navigating to {url}")
+            await page.goto(url, {"timeout": timeout})
+
+            # Scroll down the page
+            for _ in range(num_scroll):
+                await page.evaluate('window.scrollTo(0, document.body.scrollHeight);')
+                await asyncio.sleep(2)  # Wait for content to load
+
+            content = await page.content()
+            logger.info(f"Successfully scraped content from {url}")
+
+            return content
+
+        except Exception as e:
+            logger.error(f"Error while scraping Categories {url}: {e}")
+            return None
+
+        finally:
+            if browser:
+                await browser.close()
+
     def _remove_existing_urls(self, news_urls, existing_urls):
         return list(set(news_urls) - existing_urls)
+
+    def _remove_duplicated_urls(self, all_news_urls_with_categories):
+        existing_urls = set(get_urls_from_db(self.name))
+        unique_news_urls_with_categories = []
+        seen_urls = set()
+
+        for url, category in all_news_urls_with_categories:
+            if url not in seen_urls and url not in existing_urls:
+                seen_urls.add(url)
+                unique_news_urls_with_categories.append((url, category))
+
+        return unique_news_urls_with_categories
 
     def get_category_urls(self):
         category_urls = [self.base_url + path for path in self.target_categories]
@@ -185,24 +202,26 @@ class WebScraper:
         logger.info("Category URLs : ")
         logger.info(category_urls)
 
-        data_dict_list = []
+        all_news_urls_with_categories = []
         for category_url, category in zip(category_urls, categories):
             logger.info("Fetching all news links ... " + category_url)
-            news_urls = []
             try:
                 news_urls = self.fetch_links_in_category(category_url)
-                existing_urls = get_urls_from_db(self.name)
-                news_urls = self._remove_existing_urls(news_urls, existing_urls)
+                all_news_urls_with_categories.extend((url, category) for url in news_urls)
             except Exception as e:
                 logger.error(e)
 
-            logger.info(f"Fetching each news content ... for Total {len(news_urls)} links ...")
-            for news_url in news_urls:
-                try:
-                    data_dict_list.append(self.fetch_content_in_news(news_url, category))
-                except Exception as e:
-                    logger.error(e)
+        news_urls_categories = self._remove_duplicated_urls(all_news_urls_with_categories)
 
+        logger.info(f"Fetching each news content ... for Total {len(news_urls_categories)} links ...")
+        data_dict_list = []
+        for news_url, category in news_urls_categories:
+            try:
+                data_dict_list.append(self.fetch_content_in_news(news_url, category))
+            except Exception as e:
+                logger.error(e)
+
+        logger.info("Successfully fetched all categories!")
         return data_dict_list
 
 
