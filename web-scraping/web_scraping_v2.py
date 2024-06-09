@@ -1,3 +1,4 @@
+import random
 import logging
 import re
 import requests
@@ -288,6 +289,7 @@ def main(num_cores=1):
     t1 = time()
     dt1 = datetime.now()
 
+    random.shuffle(configs)
     for config in configs:
         logger.info(f"************************   Start Fetching {config['name']}   ************************")
         data_dict_list = scrape_one(config)

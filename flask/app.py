@@ -111,7 +111,7 @@ class CommentsResource(Resource):
         query = {}
 
         if 'targetUrl' in query_params:
-            target_urls = query_params.getlist('targetUrl')
+            target_urls = request.args.getlist('targetUrl')
             query['targetUrl'] = {"$in": target_urls}
 
         if 'platform' in query_params:
