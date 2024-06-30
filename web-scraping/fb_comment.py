@@ -3,6 +3,7 @@ import logging
 import re
 import os
 import argparse
+from datetime import datetime
 import urllib.request
 from urllib.parse import urlparse, urlunparse
 from pymongo import MongoClient
@@ -196,6 +197,11 @@ logger = get_logger(is_file=False, is_console=True)
 
 
 if __name__ == "__main__":
+    t = datetime.now().strftime('%Y-%m-%d %H:%M')
+    logger.info("***************************************************")
+    logger.info(f"************** {t} *******************")
+    logger.info("***************************************************")
+
     parser = argparse.ArgumentParser(description="Limit the scraping results")
     parser.add_argument('results_limit', type=int, nargs='?', default=25,
                         help='Scraping results limit (default: 25)')
@@ -204,4 +210,3 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     main(args)
-
