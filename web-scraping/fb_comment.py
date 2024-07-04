@@ -16,6 +16,20 @@ comments_collection = db['comments']
 job_log_collection = db['job_log']
 
 
+newsFB = {
+    "hk01": "https://www.facebook.com/hk01.news",
+    "hket": "https://www.facebook.com/hketpage",
+    "am730": "https://www.facebook.com/am730hk",
+    "hkej": "https://www.facebook.com/hongkongeconomicjournal",
+    "tvb": "https://www.facebook.com/tvbnewsofficial",
+    "singtao": "https://www.facebook.com/singtaohk",
+    "std": "https://www.facebook.com/stheadlinehk",
+    "sina": "https://www.facebook.com/hongkongsina",
+    "hk01_2": "https://www.facebook.com/hk01wemedia/",
+    "oncc": "https://www.facebook.com/onccnews/"
+}
+
+
 def get_logger(is_file=False, is_console=False):
 
     # Create a logger
@@ -66,13 +80,13 @@ def get_actors(client):
     return fb_posts_scraper_id, fb_comments_scraper_id
 
 
-def get_comments(client, results_limit=25, comments_limit=50):
+def get_comments(client, homepage_url, results_limit=25, comments_limit=50):
     logger.info("Getting comments urls from facebook...")
     fb_posts_scraper_id, fb_comments_scraper_id = get_actors(client)
 
-    # Get last 25 posts from HK01
+    # Get last 25 posts
     input_get_post = {
-        "startUrls": [{ "url": "https://www.facebook.com/hk01wemedia/" }],
+        "startUrls": [{"url": homepage_url}],
         "resultsLimit": results_limit,
     }
     # Run the Actor and wait for it to finish
@@ -81,8 +95,7 @@ def get_comments(client, results_limit=25, comments_limit=50):
     # Fetch and print Actor results from the run's dataset (if there are any)
     output_urls = []
     for item in client.dataset(run_get_post["defaultDatasetId"]).iterate_items():
-        if "01新聞" in item.get("text", ""):
-            output_urls.append({"url": item["url"]})
+        output_urls.append({"url": item["url"]})
 
     logger.info("Getting comments...")
     # Prepare the Actor input
@@ -103,19 +116,65 @@ def get_comments(client, results_limit=25, comments_limit=50):
     return items
 
 
-def extract_and_expand_bityl_link(post_title):
-    match = re.search(r"全文：(.*?)\n", post_title)
-    if match:
-        bityl_link = match.group(1)
-        try:
-            with urllib.request.urlopen(bityl_link) as response:
-                parsed_url = urlparse(response.geturl())
-                clean_url = urlunparse(parsed_url._replace(query=""))
-                return clean_url
-        except:
-            return None
-    else:
-        return None
+def extract_first_url(text):
+    if isinstance(text, str):
+        match = re.search(r"https?://[^\s]+", text)
+        if match:
+            return match.group(0)
+    return None
+
+
+def extract_first_url_for_each_fb_url(items):
+    # Create a dictionary to store the first URL for each facebookUrl
+    facebook_url_dict = {}
+
+    # Populate the dictionary from the text column
+    for item in items:
+        facebook_url = item.get("facebookUrl", "")
+        url = extract_first_url(item.get("text", ""))
+        if facebook_url and url and facebook_url not in facebook_url_dict:
+            facebook_url_dict[facebook_url] = url
+
+    # Extract URLs from the postTitle
+    for item in items:
+        item["postTitleURL"] = extract_first_url(item.get("postTitle", ""))
+
+    # Prioritize the URL from postTitle if available, otherwise use the one from text
+    for item in items:
+        post_title_url = item.get("postTitleURL")
+        facebook_url = item.get("facebookUrl", "")
+        item["targetUrl"] = post_title_url if post_title_url else facebook_url_dict.get(facebook_url, None)
+
+    # Remove items where the News Link is None
+    items = [item for item in items if item.get("targetUrl")]
+
+    # Remove specific keys from the dictionaries
+    keys_to_remove = ["id", "feedbackId", "profileUrl", "profilePicture", "profileId", "profileName", "facebookId", "pageAdLibrary", "attachments"]
+
+    for item in items:
+        for key in keys_to_remove:
+            if key in item:
+                del item[key]
+
+    return items
+
+
+def expand_shortened_link(url):
+    try:
+        if "m.hkej.com" in url:
+          url = url.replace("https://m.hkej.com/landing/mobarticle2/id/", "https://www2.hkej.com/instantnews/current/article/")
+          return url
+        req = urllib.request.Request(
+            url,
+            headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'}
+        )
+        with urllib.request.urlopen(req) as response:
+            expanded_url = response.geturl()
+            parsed_url = urlparse(expanded_url)
+            clean_url = urlunparse(parsed_url._replace(query=""))
+            return clean_url
+    except Exception as e:
+        return url
 
 
 def get_urls_from_db(platform='hk01'):
@@ -158,37 +217,54 @@ def main(args):
     logger.info(f"Posts Limit : {results_limit} \n Comments Limit : {comments_limit}")
 
     client = get_api_client()
-    comments = get_comments(client, results_limit, comments_limit)
+    for _platform, homepage_url in newsFB.items():
+        platform = _platform if _platform != "hk01_2" else "hk01"
+        logger.info("=======================================")
+        logger.info(f"Starting fetching platform: {platform}")
 
-    # Add a new expanded news URLs and filter targetUrl to preserve only those in news_data
-    for comment in comments:
-        comment["targetUrl"] = extract_and_expand_bityl_link(comment["postTitle"])
+        comments = get_comments(client, homepage_url, results_limit, comments_limit)
+        comments = extract_first_url_for_each_fb_url(comments)
 
-    existing_urls = get_urls_from_db(platform="hk01")
-    comments = [c for c in comments if c["targetUrl"] in existing_urls]
+        # Define the domains to check for
+        domains = ["bityl.co", "tinyurl.com", "buff.ly", "bit.ly", "m.hkej.com"]
+        for item in comments:
+            news_link = item.get("targetUrl", "")
+            if any(domain in news_link for domain in domains):
+                item["targetUrl"] = expand_shortened_link(news_link)
 
-    # With targetUrl, only get those comments not in db
-    for comment in comments:
-        comment["commentId"] = comment["commentUrl"].split('?')[1].split('=')[1]
+        existing_urls = get_urls_from_db(platform)
+        comments = [c for c in comments if c["targetUrl"] in existing_urls]
 
-    existing_comments = get_comments_from_db(platform="hk01")
-    comments = [c for c in comments if (c["targetUrl"], c["commentId"]) not in existing_comments]
+        # With targetUrl, only get those comments not in db
+        for comment in comments:
+            try:
+                comment["commentId"] = comment["commentUrl"].split('?')[1].split('=')[1]
+            except:
+                comment["commentId"] = 0
+                continue
 
-    # Create a new list with certain fields
-    results = []
-    for c in comments:
-        if 'text' not in c.keys():
-            continue
-        results.append({
-            'date': c['date'],
-            'text': c['text'],
-            'postTitle': c['postTitle'],
-            'targetUrl': c['targetUrl'],
-            'commentId': c['commentId'],
-            'platform': 'hk01'
-        })
+        existing_comments = get_comments_from_db(platform)
+        comments = [c for c in comments if (c["targetUrl"], c["commentId"]) not in existing_comments]
 
-    insert_comments_to_db(results)
+        # Create a new list with certain fields
+        results = []
+        for c in comments:
+            if 'text' not in c.keys():
+                continue
+            results.append({
+                'date': c['date'],
+                'text': c['text'],
+                'postTitle': c['postTitle'],
+                'targetUrl': c['targetUrl'],
+                'commentId': c['commentId'],
+                'platform': platform
+            })
+
+        insert_comments_to_db(results)
+        del comments
+        del existing_comments
+        del results
+        logger.info(f"Comments Scraping Complete for {platform} ~~~")
 
     logger.info("Comments Scraping Completed!!!")
 
